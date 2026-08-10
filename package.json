@@ -13,7 +13,7 @@
     "format:check": "prettier --check .",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "commit": "sh -c 'git add . && git commit -m \"$1\" && git push origin main' --"
+    "commit": "sh scripts/commit.sh"
   },
   "dependencies": {
     "ramda": "^0.32.0"
