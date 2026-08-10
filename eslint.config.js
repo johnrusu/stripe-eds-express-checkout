@@ -1,10 +1,15 @@
-const js = require("@eslint/js");
-const globals = require("globals");
-const prettier = require("eslint-config-prettier");
+import js from "@eslint/js";
+import globals from "globals";
+import prettier from "eslint-config-prettier";
 
-module.exports = [
+export default [
   {
-    ignores: ["node_modules/**", "eslint.config.js"],
+    ignores: [
+      "node_modules/**",
+      "dist/**",
+      "eslint.config.js",
+      "vite.config.js",
+    ],
   },
   js.configs.recommended,
   prettier,
