@@ -340,14 +340,14 @@ function savePublicConfiguration(config) {
       commerceUrl: config.commerceUrl,
       runtimeBaseUrl: config.runtimeBaseUrl,
       storeCode: config.storeCode,
-    }),
+    })
   );
 }
 
 function restoreConfiguration() {
   try {
     const config = JSON.parse(
-      window.localStorage.getItem(CONFIG_STORAGE_KEY) || "null",
+      window.localStorage.getItem(CONFIG_STORAGE_KEY) || "null"
     );
     if (config) {
       dom.commerceUrl.value = config.commerceUrl || "";
@@ -357,7 +357,7 @@ function restoreConfiguration() {
   } catch (error) {
     console.warn(
       "Unable to restore standalone storefront configuration.",
-      error,
+      error
     );
   }
 
@@ -527,7 +527,7 @@ function isCompleteCommerceAddress(address) {
     address?.street?.[0] &&
     address?.city &&
     address?.country?.code &&
-    address?.postcode,
+    address?.postcode
   );
 }
 
@@ -554,7 +554,7 @@ function renderCartSummary() {
   setBadge(
     dom.cartStatus,
     cart?.id ? TEXT.cartLoaded : TEXT.noCart,
-    cart?.id ? "success" : "",
+    cart?.id ? "success" : ""
   );
   dom.summaryCustomer.textContent = isAuthenticated
     ? TEXT.customerRegistered
@@ -824,7 +824,7 @@ async function handleShippingAddressChange(event) {
     ) {
       await setShippingAddress(
         fullWalletAddress,
-        event.phone || event.phoneNumber,
+        event.phone || event.phoneNumber
       );
       await refreshCart({ synchronizeElement: false });
       methods = getShippingMethods();
@@ -951,7 +951,7 @@ async function synchronizeWalletDetails(event) {
             name: billingDetails.name,
             address: billingDetails.address,
           },
-          billingDetails.phone,
+          billingDetails.phone
         ),
       },
     });
@@ -981,7 +981,7 @@ async function createPaymentIntent(confirmationTokenId) {
   const data = await response.json().catch(() => null);
   if (!response.ok || !data?.client_secret) {
     throw new Error(
-      data?.error || data?.message || "Unable to create the PaymentIntent.",
+      data?.error || data?.message || "Unable to create the PaymentIntent."
     );
   }
   return data;
@@ -1108,7 +1108,7 @@ async function runConfirmation(event) {
     ) {
       notifyPaymentFailure(event);
       throw new Error(
-        `Unexpected PaymentIntent status: ${confirmationResult.paymentIntent.status}`,
+        `Unexpected PaymentIntent status: ${confirmationResult.paymentIntent.status}`
       );
     }
 
@@ -1151,18 +1151,18 @@ function registerExpressCheckoutHandlers() {
   state.expressCheckoutElement.on("confirm", handleConfirm);
   state.expressCheckoutElement.on(
     "shippingaddresschange",
-    handleShippingAddressChange,
+    handleShippingAddressChange
   );
   state.expressCheckoutElement.on(
     "shippingratechange",
-    handleShippingRateChange,
+    handleShippingRateChange
   );
   state.expressCheckoutElement.on("cancel", handleModalDismissed);
   state.expressCheckoutElement.on("escape", handleModalDismissed);
   state.expressCheckoutElement.on("loaderror", (event) => {
     console.warn(
       "Stripe Express Checkout Element failed to load.",
-      event.error,
+      event.error
     );
     state.elementLoadFailed = true;
     handleModalDismissed();
@@ -1200,7 +1200,7 @@ async function mountExpressCheckout() {
     state.initParams = await fetchInitParams();
     state.stripe = Stripe(
       state.initParams.publishableKey,
-      state.initParams.options,
+      state.initParams.options
     );
     if (state.initParams.appInfo) {
       state.stripe.registerAppInfo(state.initParams.appInfo);
@@ -1228,7 +1228,7 @@ async function mountExpressCheckout() {
     state.elements = state.stripe.elements(elementsOptions);
     state.expressCheckoutElement = state.elements.create(
       "expressCheckout",
-      getExpressCheckoutOptions(),
+      getExpressCheckoutOptions()
     );
     registerExpressCheckoutHandlers();
     state.expressCheckoutElement.mount("#express-checkout-element");

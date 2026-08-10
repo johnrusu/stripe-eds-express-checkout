@@ -5,10 +5,10 @@
   "description": "Standalone Stripe Express Checkout storefront for Adobe Commerce",
   "type": "module",
   "scripts": {
-    "build": "esbuild index.js --bundle --format=esm --outfile=index.bundled.js --sourcemap",
-    "build:watch": "esbuild index.js --bundle --format=esm --outfile=index.bundled.js --sourcemap --watch",
-    "start": "npm run build && concurrently -k \"npm:build:watch\" \"npm:serve\"",
-    "serve": "serve -l 8000 -o",
+    "dev": "vite",
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
@@ -19,12 +19,10 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
-    "concurrently": "^9.2.1",
-    "esbuild": "^0.25.9",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^16.5.0",
     "prettier": "^3.6.2",
-    "serve": "^14.2.5"
+    "vite": "^8.2.1"
   }
 }

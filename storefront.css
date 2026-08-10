@@ -165,14 +165,23 @@ input {
 }
 
 button {
+  align-items: center;
   background: #635bff;
   border: 1px solid #635bff;
   border-radius: 8px;
   color: #fff;
   cursor: pointer;
+  display: inline-flex;
   font-weight: 700;
+  gap: 0.5rem;
+  justify-content: center;
   min-height: 42px;
   padding: 9px 15px;
+}
+
+.button-icon {
+  height: 1em;
+  width: 1em;
 }
 
 button:hover:not(:disabled) {
