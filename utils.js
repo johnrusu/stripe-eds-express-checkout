@@ -38,6 +38,17 @@ export const removeFromLocalStorage = (key) => {
   localStorage.removeItem(key);
 };
 
+/**
+ * Removes every key from `localStorage`.
+ *
+ * @returns {string[]} The keys that were purged.
+ */
+export const purgeLocalStorage = () => {
+  const keys = Object.keys(localStorage);
+  localStorage.clear();
+  return keys;
+};
+
 export const isJsonValid = (json) => {
   try {
     JSON.parse(json);

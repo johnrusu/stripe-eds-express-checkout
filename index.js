@@ -3,6 +3,7 @@ import {
   addToLocalStorage,
   getFromLocalStorage,
   removeFromLocalStorage,
+  purgeLocalStorage,
   isJsonValid,
 } from "./utils.js";
 
@@ -20,6 +21,19 @@ const INPUTS_IDS = Object.freeze({
 });
 
 const configuration = {};
+
+const resetConfigurationInputs = () => {
+  Object.keys(configuration).forEach((key) => {
+    delete configuration[key];
+  });
+
+  Object.values(INPUTS_IDS).forEach((id) => {
+    const input = document.querySelector(`#${id}`);
+    if (!isNilOrEmpty(input)) {
+      input.value = id === INPUTS_IDS.STORE_CODE ? "default" : "";
+    }
+  });
+};
 
 window.addEventListener("DOMContentLoaded", () => {
   // clear the local storage
@@ -65,4 +79,14 @@ window.addEventListener("DOMContentLoaded", () => {
       }
     }
   });
+
+  const purgeLocalStorageButton = document.querySelector(
+    "#purge-local-storage-button"
+  );
+  if (!isNilOrEmpty(purgeLocalStorageButton)) {
+    purgeLocalStorageButton.addEventListener("click", () => {
+      purgeLocalStorage();
+      resetConfigurationInputs();
+    });
+  }
 });

@@ -189,6 +189,16 @@ button.secondary:hover:not(:disabled) {
   background: #f9fafb;
 }
 
+button.danger {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
+}
+
+button.danger:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
 button.small {
   font-size: 0.78rem;
   min-height: 34px;
