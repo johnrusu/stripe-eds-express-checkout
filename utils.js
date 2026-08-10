@@ -1,5 +1,7 @@
 // validation tools
-import { anyPass, isEmpty, isNil } from "ramda";
+import anyPass from "./node_modules/ramda/es/anyPass.js";
+import isEmpty from "./node_modules/ramda/es/isEmpty.js";
+import isNil from "./node_modules/ramda/es/isNil.js";
 
 /**
  * Returns `true` if the given value is its type's empty value, `null` or `undefined`.
