@@ -4,8 +4,8 @@ This directory contains two frontend-only integrations for Adobe Commerce and
 the existing Stripe App Builder actions:
 
 - `blocks/stripe-express-checkout/` is the EDS checkout block.
-- `storefront.html`, `storefront.js`, and `storefront.css` are a standalone
-  one-page storefront for merchants who do not use EDS.
+- `index.html`, `src/js/storefront.js`, and `src/css/storefront.css` are a
+  standalone one-page storefront for merchants who do not use EDS.
 
 Both implementations use Stripe Express Checkout Element and Confirmation
 Tokens. Neither uses `stripe.createPaymentMethod()`. The backend remains the

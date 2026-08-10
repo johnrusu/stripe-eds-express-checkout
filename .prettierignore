@@ -1,6 +1,4 @@
 node_modules
 package-lock.json
 dist
-index.bundled.js
-index.bundled.js.map
 .git
