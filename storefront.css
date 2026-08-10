@@ -365,6 +365,97 @@ button:disabled {
   }
 }
 
+.notification-host {
+  bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-width: min(24rem, calc(100vw - 1.5rem));
+  pointer-events: none;
+  position: fixed;
+  right: 1rem;
+  z-index: 40;
+}
+
+.notification {
+  background: #111827;
+  border-radius: 10px;
+  box-shadow: 0 12px 30px rgb(17 24 39 / 18%);
+  color: #fff;
+  display: grid;
+  gap: 0.15rem 0.75rem;
+  grid-template-columns: 1fr auto;
+  opacity: 0;
+  padding: 0.85rem 0.9rem;
+  pointer-events: auto;
+  transform: translateY(0.5rem);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.notification-enter {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.notification-leave {
+  opacity: 0;
+  transform: translateY(0.35rem);
+}
+
+.notification-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  opacity: 0.8;
+  text-transform: uppercase;
+}
+
+.notification-message {
+  grid-column: 1;
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+.notification-close {
+  align-self: start;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: 700;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  line-height: 1;
+  min-height: auto;
+  opacity: 0.75;
+  padding: 0;
+}
+
+.notification-close:hover:not(:disabled) {
+  background: transparent;
+  opacity: 1;
+}
+
+.notification-success {
+  background: #047857;
+}
+
+.notification-error {
+  background: #b91c1c;
+}
+
+.notification-warning {
+  background: #b45309;
+}
+
+.notification-info {
+  background: #1d4ed8;
+}
+
 @media (max-width: 700px) {
   .storefront-form,
   .storefront-summary {
@@ -377,5 +468,12 @@ button:disabled {
 
   .storefront-card-heading {
     align-items: flex-start;
+  }
+
+  .notification-host {
+    bottom: 0.75rem;
+    left: 0.75rem;
+    max-width: none;
+    right: 0.75rem;
   }
 }

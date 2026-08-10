@@ -6,6 +6,7 @@ import {
   purgeLocalStorage,
   isJsonValid,
 } from "./utils.js";
+import { notifySuccess } from "./notifications.js";
 
 const LOCAL_STORAGE_KEY = "configuration";
 
@@ -85,8 +86,13 @@ window.addEventListener("DOMContentLoaded", () => {
   );
   if (!isNilOrEmpty(purgeLocalStorageButton)) {
     purgeLocalStorageButton.addEventListener("click", () => {
-      purgeLocalStorage();
+      const keys = purgeLocalStorage();
       resetConfigurationInputs();
+      notifySuccess(
+        keys.length
+          ? `Cleared ${keys.length} local storage key${keys.length === 1 ? "" : "s"}.`
+          : "Local storage was already empty."
+      );
     });
   }
 });

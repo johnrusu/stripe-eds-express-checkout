@@ -9,6 +9,7 @@ export default [
       "dist/**",
       "index.bundled.js",
       "eslint.config.js",
+      "vite.config.js",
     ],
   },
   js.configs.recommended,

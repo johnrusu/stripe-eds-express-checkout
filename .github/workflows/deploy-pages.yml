@@ -25,14 +25,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      - name: Prepare site
-        run: |
-          mkdir _site
-          cp index.html index.bundled.js favicon.svg storefront.js storefront.css _site/
-          if [ -f index.bundled.js.map ]; then cp index.bundled.js.map _site/; fi
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: _site
+          path: dist
 
   deploy:
     needs: build

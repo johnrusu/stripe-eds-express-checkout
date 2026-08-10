@@ -1,5 +1,7 @@
 /* global Stripe */
 
+import { notifyError, notifySuccess } from "./notifications.js";
+
 const STRIPE_PAYMENT_METHOD_CODE = "oope_stripe";
 const CONFIG_STORAGE_KEY = "STRIPE_ECE_STOREFRONT_CONFIG";
 const CART_STORAGE_KEY = "STRIPE_ECE_STOREFRONT_CART_ID";
@@ -1284,9 +1286,11 @@ async function handleConnect(event) {
       authenticated: Boolean(config.customerToken),
       storeCode: config.storeCode,
     });
+    notifySuccess("Storefront connected.");
   } catch (error) {
     setBadge(dom.connectionStatus, error.message, "error");
     log("configuration/error", { message: error.message });
+    notifyError(error.message || "Unable to connect.");
   }
 }
 
@@ -1294,9 +1298,11 @@ async function handleCreateCart() {
   dom.createCartButton.disabled = true;
   try {
     await createOrLoadCart();
+    notifySuccess(state.cartId ? `Cart ready: ${state.cartId}` : "Cart ready.");
   } catch (error) {
     setBadge(dom.cartStatus, error.message, "error");
     log("cart/create-error", { message: error.message });
+    notifyError(error.message || "Unable to create or load cart.");
   } finally {
     dom.createCartButton.disabled = false;
   }
@@ -1325,9 +1331,11 @@ async function handleAddProduct(event) {
     }
     await refreshCart();
     setBadge(dom.cartStatus, TEXT.addedProduct, "success");
+    notifySuccess(`Added ${quantity} × ${sku}.`);
   } catch (error) {
     setBadge(dom.cartStatus, error.message, "error");
     log("cart/add-product-error", { message: error.message });
+    notifyError(error.message || "Unable to add product.");
   } finally {
     dom.addProductButton.disabled = false;
   }
@@ -1337,9 +1345,11 @@ async function handleRefreshCart() {
   dom.refreshCartButton.disabled = true;
   try {
     await refreshCart();
+    notifySuccess("Cart refreshed.");
   } catch (error) {
     setBadge(dom.cartStatus, TEXT.refreshFailed, "error");
     log("cart/refresh-error", { message: error.message });
+    notifyError(error.message || TEXT.refreshFailed);
   } finally {
     dom.refreshCartButton.disabled = false;
   }
@@ -1361,6 +1371,7 @@ function clearLocalSession() {
   hideExpressCheckout();
   hideOrderSuccess();
   renderCartSummary();
+  notifySuccess("Local session cleared.");
 }
 
 dom.configurationForm.addEventListener("submit", handleConnect);
@@ -1370,6 +1381,7 @@ dom.refreshCartButton.addEventListener("click", handleRefreshCart);
 dom.clearSessionButton.addEventListener("click", clearLocalSession);
 dom.clearLogButton.addEventListener("click", () => {
   dom.log.textContent = "";
+  notifySuccess("Checkout log cleared.");
 });
 
 restoreConfiguration();
