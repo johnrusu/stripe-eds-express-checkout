@@ -7,8 +7,8 @@ export default [
     ignores: [
       "node_modules/**",
       "dist/**",
+      "index.bundled.js",
       "eslint.config.js",
-      "vite.config.js",
     ],
   },
   js.configs.recommended,

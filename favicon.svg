@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Express Checkout">
+  <rect width="32" height="32" rx="8" fill="#635bff"/>
+  <path fill="#fff" d="M8 11.5h16v2.2H8zm0 6.8h11v2.2H8z"/>
+  <circle cx="22.5" cy="18.6" r="3.2" fill="#fff"/>
+</svg>
