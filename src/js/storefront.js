@@ -37,7 +37,6 @@ const TEXT = {
       : "Your order has been confirmed.",
   paymentFailed: "Payment failed",
   ready: "Ready",
-  refreshFailed: "Unable to refresh the cart.",
   runtimeMissing: "Stripe runtime configuration is unavailable on this cart.",
   stripeMissing: "Stripe OOPE is not available on this cart.",
   walletUnavailable: "No supported wallet is available in this browser.",
@@ -264,7 +263,6 @@ const dom = {
   startOverButton: document.querySelector("#start-over-button"),
   productQuantity: document.querySelector("#product-quantity"),
   productSku: document.querySelector("#product-sku"),
-  refreshCartButton: document.querySelector("#refresh-cart-button"),
   runtimeBaseUrl: document.querySelector("#runtime-base-url"),
   storeCode: document.querySelector("#store-code"),
   summaryCapture: document.querySelector("#summary-capture"),
@@ -416,6 +414,7 @@ function applyEnvironmentPreset(presetKey, { notify = true } = {}) {
   }
 
   syncStorageActionAvailability();
+  syncCartActionAvailability();
   log("configuration/environment-preset", {
     environment: presetKey,
     commerceGraphqlUrl: preset.commerceGraphqlUrl,
@@ -484,10 +483,12 @@ function hasCartId() {
   return Boolean(dom.cartId.value.trim() || state.cartId);
 }
 
+function hasProductSku() {
+  return Boolean(dom.productSku.value.trim());
+}
+
 function syncCartActionAvailability() {
-  const disabled = !hasCartId();
-  dom.addProductButton.disabled = disabled;
-  dom.refreshCartButton.disabled = disabled;
+  dom.addProductButton.disabled = !hasCartId() || !hasProductSku();
   syncStorageActionAvailability();
 }
 
@@ -1562,6 +1563,10 @@ async function handleAddProduct(event) {
     notifyError(TEXT.cartMissing);
     return;
   }
+  if (!hasProductSku()) {
+    notifyError("Enter a product SKU.");
+    return;
+  }
 
   dom.addProductButton.disabled = true;
   try {
@@ -1594,25 +1599,6 @@ async function handleAddProduct(event) {
     setBadge(dom.cartStatus, error.message, "error");
     log("cart/add-product-error", { message: error.message });
     notifyError(error.message || "Unable to add product.");
-  } finally {
-    syncCartActionAvailability();
-  }
-}
-
-async function handleRefreshCart() {
-  if (!hasCartId()) {
-    notifyError(TEXT.cartMissing);
-    return;
-  }
-
-  dom.refreshCartButton.disabled = true;
-  try {
-    await refreshCart();
-    notifySuccess("Cart refreshed.");
-  } catch (error) {
-    setBadge(dom.cartStatus, TEXT.refreshFailed, "error");
-    log("cart/refresh-error", { message: error.message });
-    notifyError(error.message || TEXT.refreshFailed);
   } finally {
     syncCartActionAvailability();
   }
@@ -1658,7 +1644,7 @@ dom.runtimeBaseUrl.addEventListener("change", syncEnvironmentPresetSelection);
 dom.createCartButton.addEventListener("click", handleCreateCart);
 dom.cartForm.addEventListener("submit", handleAddProduct);
 dom.cartId.addEventListener("input", syncCartActionAvailability);
-dom.refreshCartButton.addEventListener("click", handleRefreshCart);
+dom.productSku.addEventListener("input", syncCartActionAvailability);
 dom.clearSessionButton.addEventListener("click", clearLocalSession);
 dom.startOverButton.addEventListener("click", () => {
   clearLocalSession({ notifyMessage: "Storefront reset. Connect again to start over." });
