@@ -1,6 +1,7 @@
 /* global Stripe */
 
 import { notifyError, notifySuccess, notifyWarning } from "./notifications.js";
+import { ENVIRONMENTS } from "./environments.js";
 
 const STRIPE_PAYMENT_METHOD_CODE = "oope_stripe";
 const CONFIG_STORAGE_KEY = "STRIPE_ECE_STOREFRONT_CONFIG";
@@ -252,6 +253,7 @@ const dom = {
   connectionStatus: document.querySelector("#connection-status"),
   createCartButton: document.querySelector("#create-cart-button"),
   customerToken: document.querySelector("#customer-token"),
+  environmentPreset: document.querySelector("#environment-preset"),
   expressCheckoutSection: document.querySelector("#express-checkout-section"),
   log: document.querySelector("#storefront-log"),
   paymentContent: document.querySelector("#payment-content"),
@@ -259,6 +261,7 @@ const dom = {
   orderSuccess: document.querySelector("#order-success"),
   orderSuccessMessage: document.querySelector("#order-success-message"),
   orderSuccessTitle: document.querySelector("#order-success-title"),
+  startOverButton: document.querySelector("#start-over-button"),
   productQuantity: document.querySelector("#product-quantity"),
   productSku: document.querySelector("#product-sku"),
   refreshCartButton: document.querySelector("#refresh-cart-button"),
@@ -357,6 +360,7 @@ function savePublicConfiguration(config) {
       commerceUrl: config.commerceUrl,
       runtimeBaseUrl: config.runtimeBaseUrl,
       storeCode: config.storeCode,
+      environmentPreset: dom.environmentPreset.value || "",
     })
   );
   syncStorageActionAvailability();
@@ -371,6 +375,11 @@ function restoreConfiguration() {
       dom.commerceUrl.value = config.commerceUrl || "";
       dom.runtimeBaseUrl.value = config.runtimeBaseUrl || "";
       dom.storeCode.value = config.storeCode || "default";
+      if (config.environmentPreset && ENVIRONMENTS[config.environmentPreset]) {
+        dom.environmentPreset.value = config.environmentPreset;
+      } else {
+        syncEnvironmentPresetSelection();
+      }
     }
   } catch (error) {
     console.warn(
@@ -384,6 +393,49 @@ function restoreConfiguration() {
     dom.cartId.value = cartId;
     state.cartId = cartId;
   }
+}
+
+function applyEnvironmentPreset(presetKey, { notify = true } = {}) {
+  const preset = ENVIRONMENTS[presetKey];
+  if (!preset) {
+    return;
+  }
+
+  const previousCommerceUrl = dom.commerceUrl.value.trim();
+  dom.commerceUrl.value = preset.commerceGraphqlUrl;
+  dom.runtimeBaseUrl.value = preset.appBuilderStripeActionBaseUrl;
+  dom.productSku.value = preset.productSku;
+  dom.environmentPreset.value = presetKey;
+
+  if (
+    state.connected &&
+    previousCommerceUrl &&
+    previousCommerceUrl !== preset.commerceGraphqlUrl
+  ) {
+    handleCommerceUrlChange();
+  }
+
+  syncStorageActionAvailability();
+  log("configuration/environment-preset", {
+    environment: presetKey,
+    commerceGraphqlUrl: preset.commerceGraphqlUrl,
+    productSku: preset.productSku,
+  });
+
+  if (notify) {
+    notifySuccess(`Loaded ${preset.label} preset.`);
+  }
+}
+
+function syncEnvironmentPresetSelection() {
+  const commerceUrl = dom.commerceUrl.value.trim();
+  const runtimeBaseUrl = normalizeBaseUrl(dom.runtimeBaseUrl.value);
+  const match = Object.entries(ENVIRONMENTS).find(
+    ([, preset]) =>
+      preset.commerceGraphqlUrl === commerceUrl &&
+      normalizeBaseUrl(preset.appBuilderStripeActionBaseUrl) === runtimeBaseUrl
+  );
+  dom.environmentPreset.value = match?.[0] || "";
 }
 
 function getCommerceHeaders() {
@@ -1566,8 +1618,10 @@ async function handleRefreshCart() {
   }
 }
 
-function clearLocalSession() {
-  if (!hasLocalSession()) {
+function clearLocalSession({
+  notifyMessage = "Local session cleared.",
+} = {}) {
+  if (!hasLocalSession() && dom.orderSuccess.hidden) {
     return;
   }
 
@@ -1578,20 +1632,38 @@ function clearLocalSession() {
   dom.runtimeBaseUrl.value = "";
   dom.customerToken.value = "";
   dom.storeCode.value = "default";
+  dom.productSku.value = "";
+  dom.productQuantity.value = "1";
+  dom.environmentPreset.value = "";
   dom.log.textContent = "";
   syncLogActionsAvailability();
   syncStorageActionAvailability();
   setBadge(dom.connectionStatus, TEXT.notConnected);
-  notifySuccess("Local session cleared.");
+  notifySuccess(notifyMessage);
 }
 
 dom.configurationForm.addEventListener("submit", handleConnect);
-dom.commerceUrl.addEventListener("change", handleCommerceUrlChange);
+dom.environmentPreset.addEventListener("change", (event) => {
+  const presetKey = event.target.value;
+  if (!presetKey) {
+    return;
+  }
+  applyEnvironmentPreset(presetKey);
+});
+dom.commerceUrl.addEventListener("change", () => {
+  handleCommerceUrlChange();
+  syncEnvironmentPresetSelection();
+});
+dom.runtimeBaseUrl.addEventListener("change", syncEnvironmentPresetSelection);
 dom.createCartButton.addEventListener("click", handleCreateCart);
 dom.cartForm.addEventListener("submit", handleAddProduct);
 dom.cartId.addEventListener("input", syncCartActionAvailability);
 dom.refreshCartButton.addEventListener("click", handleRefreshCart);
 dom.clearSessionButton.addEventListener("click", clearLocalSession);
+dom.startOverButton.addEventListener("click", () => {
+  clearLocalSession({ notifyMessage: "Storefront reset. Connect again to start over." });
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
 dom.clearLogButton.addEventListener("click", () => {
   dom.log.textContent = "";
   syncLogActionsAvailability();
