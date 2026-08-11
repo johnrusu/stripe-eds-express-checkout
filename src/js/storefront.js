@@ -316,6 +316,18 @@ function log(eventName, payload) {
     }
   }
   dom.log.textContent = `[${timestamp}] ${eventName}${serialized}\n\n${dom.log.textContent}`;
+  syncLogActionsAvailability();
+  syncStorageActionAvailability();
+}
+
+function hasLogContent() {
+  return Boolean(dom.log.textContent?.trim());
+}
+
+function syncLogActionsAvailability() {
+  const disabled = !hasLogContent();
+  dom.copyLogButton.disabled = disabled;
+  dom.clearLogButton.disabled = disabled;
 }
 
 function normalizeBaseUrl(value) {
@@ -347,6 +359,7 @@ function savePublicConfiguration(config) {
       storeCode: config.storeCode,
     })
   );
+  syncStorageActionAvailability();
 }
 
 function restoreConfiguration() {
@@ -412,19 +425,53 @@ function persistCartId(cartId) {
   } else {
     window.sessionStorage.removeItem(CART_STORAGE_KEY);
   }
-  syncAddProductAvailability();
+  syncCartActionAvailability();
 }
 
 function hasCartId() {
   return Boolean(dom.cartId.value.trim() || state.cartId);
 }
 
-function syncAddProductAvailability() {
-  dom.addProductButton.disabled = !hasCartId();
+function syncCartActionAvailability() {
+  const disabled = !hasCartId();
+  dom.addProductButton.disabled = disabled;
+  dom.refreshCartButton.disabled = disabled;
+  syncStorageActionAvailability();
 }
 
 function syncCreateCartAvailability() {
   dom.createCartButton.disabled = !state.connected;
+  syncStorageActionAvailability();
+}
+
+function hasLocalSession() {
+  return Boolean(
+    window.localStorage.getItem(CONFIG_STORAGE_KEY) ||
+      window.sessionStorage.getItem(CART_STORAGE_KEY) ||
+      state.connected ||
+      state.cart ||
+      hasCartId() ||
+      dom.commerceUrl.value.trim() ||
+      dom.runtimeBaseUrl.value.trim() ||
+      dom.customerToken.value.trim() ||
+      (dom.storeCode.value.trim() &&
+        dom.storeCode.value.trim() !== "default") ||
+      hasLogContent()
+  );
+}
+
+function hasLocalStorageData() {
+  return window.localStorage.length > 0;
+}
+
+function syncStorageActionAvailability() {
+  if (dom.clearSessionButton) {
+    dom.clearSessionButton.disabled = !hasLocalSession();
+  }
+  const purgeButton = document.querySelector("#purge-local-storage-button");
+  if (purgeButton) {
+    purgeButton.disabled = !hasLocalStorageData();
+  }
 }
 
 function setConnected(connected, commerceUrl = null) {
@@ -1422,11 +1469,16 @@ async function handleAddProduct(event) {
     log("cart/add-product-error", { message: error.message });
     notifyError(error.message || "Unable to add product.");
   } finally {
-    syncAddProductAvailability();
+    syncCartActionAvailability();
   }
 }
 
 async function handleRefreshCart() {
+  if (!hasCartId()) {
+    notifyError(TEXT.cartMissing);
+    return;
+  }
+
   dom.refreshCartButton.disabled = true;
   try {
     await refreshCart();
@@ -1436,11 +1488,15 @@ async function handleRefreshCart() {
     log("cart/refresh-error", { message: error.message });
     notifyError(error.message || TEXT.refreshFailed);
   } finally {
-    dom.refreshCartButton.disabled = false;
+    syncCartActionAvailability();
   }
 }
 
 function clearLocalSession() {
+  if (!hasLocalSession()) {
+    return;
+  }
+
   window.localStorage.removeItem(CONFIG_STORAGE_KEY);
   clearCartSession();
   setConnected(false);
@@ -1449,6 +1505,8 @@ function clearLocalSession() {
   dom.customerToken.value = "";
   dom.storeCode.value = "default";
   dom.log.textContent = "";
+  syncLogActionsAvailability();
+  syncStorageActionAvailability();
   setBadge(dom.connectionStatus, TEXT.notConnected);
   notifySuccess("Local session cleared.");
 }
@@ -1457,12 +1515,26 @@ dom.configurationForm.addEventListener("submit", handleConnect);
 dom.commerceUrl.addEventListener("change", handleCommerceUrlChange);
 dom.createCartButton.addEventListener("click", handleCreateCart);
 dom.cartForm.addEventListener("submit", handleAddProduct);
-dom.cartId.addEventListener("input", syncAddProductAvailability);
+dom.cartId.addEventListener("input", syncCartActionAvailability);
 dom.refreshCartButton.addEventListener("click", handleRefreshCart);
 dom.clearSessionButton.addEventListener("click", clearLocalSession);
 dom.clearLogButton.addEventListener("click", () => {
   dom.log.textContent = "";
+  syncLogActionsAvailability();
+  syncStorageActionAvailability();
   notifySuccess("Checkout log cleared.");
+});
+
+window.addEventListener("storefront:storage-changed", syncStorageActionAvailability);
+
+[
+  dom.commerceUrl,
+  dom.runtimeBaseUrl,
+  dom.customerToken,
+  dom.storeCode,
+].forEach((input) => {
+  input.addEventListener("input", syncStorageActionAvailability);
+  input.addEventListener("change", syncStorageActionAvailability);
 });
 
 async function copyTextToClipboard(text) {
@@ -1506,4 +1578,6 @@ dom.copyLogButton.addEventListener("click", async () => {
 restoreConfiguration();
 renderCartSummary();
 syncCreateCartAvailability();
-syncAddProductAvailability();
+syncCartActionAvailability();
+syncLogActionsAvailability();
+syncStorageActionAvailability();

@@ -76,6 +76,7 @@ window.addEventListener("DOMContentLoaded", () => {
             const jsonConfiguration = JSON.stringify(configuration);
             addToLocalStorage(LOCAL_STORAGE_KEY, jsonConfiguration);
           }
+          window.dispatchEvent(new Event("storefront:storage-changed"));
         });
       }
     }
@@ -86,8 +87,12 @@ window.addEventListener("DOMContentLoaded", () => {
   );
   if (!isNilOrEmpty(purgeLocalStorageButton)) {
     purgeLocalStorageButton.addEventListener("click", () => {
+      if (window.localStorage.length === 0) {
+        return;
+      }
       const keys = purgeLocalStorage();
       resetConfigurationInputs();
+      window.dispatchEvent(new Event("storefront:storage-changed"));
       notifySuccess(
         keys.length
           ? `Cleared ${keys.length} local storage key${keys.length === 1 ? "" : "s"}.`
@@ -95,4 +100,6 @@ window.addEventListener("DOMContentLoaded", () => {
       );
     });
   }
+
+  window.dispatchEvent(new Event("storefront:storage-changed"));
 });
