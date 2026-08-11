@@ -848,9 +848,13 @@ function setCheckoutBlocked(blocked) {
 }
 
 function handleModalDismissed() {
+  const wasOpen = state.modalOpen || !dom.blocker.hidden;
   state.modalOpen = false;
   if (!state.confirmationInProgress) {
     setCheckoutBlocked(false);
+    if (wasOpen) {
+      log("wallet/dismissed");
+    }
     synchronizeExpressCheckout();
   }
 }
@@ -1141,6 +1145,11 @@ async function runConfirmation(event) {
   state.modalOpen = true;
   setCheckoutBlocked(true);
   setBadge(dom.paymentStatus, TEXT.loading, "loading");
+  log("payment/started", {
+    cartId: state.cartId,
+    amount: state.currentAmount,
+    currency: state.currentCurrency,
+  });
 
   try {
     await synchronizeWalletDetails(event);
@@ -1195,7 +1204,16 @@ async function runConfirmation(event) {
     }
 
     const confirmationTokenId = confirmationTokenResult.confirmationToken.id;
+    log("payment/confirmation-token-created", {
+      confirmationTokenId,
+    });
+
     const paymentIntentData = await createPaymentIntent(confirmationTokenId);
+    log("payment/intent-created", {
+      paymentIntentId: paymentIntentData.id,
+      status: paymentIntentData.status,
+      hasClientSecret: Boolean(paymentIntentData.client_secret),
+    });
     await persistPaymentMethod(paymentIntentData.client_secret);
 
     const confirmationResult = await state.stripe.confirmPayment({
@@ -1223,10 +1241,30 @@ async function runConfirmation(event) {
       );
     }
 
+    const paymentIntent = confirmationResult.paymentIntent;
+    log("payment/succeeded", {
+      paymentIntentId: paymentIntent?.id,
+      status: paymentIntent?.status,
+      amount: paymentIntent?.amount,
+      currency: paymentIntent?.currency,
+      captureMethod: paymentIntent?.capture_method,
+      confirmationTokenId,
+    });
+
     const order = await placeOrder();
     setBadge(dom.paymentStatus, TEXT.orderPlaced, "success");
-    showOrderSuccess(order, confirmationResult.paymentIntent?.status);
-    log("order/placed", order);
+    showOrderSuccess(order, paymentIntent?.status);
+    log("order/placed", {
+      orderNumber: order?.number,
+      orderId: order?.id,
+      paymentIntentId: paymentIntent?.id,
+      paymentStatus: paymentIntent?.status,
+    });
+    notifySuccess(
+      paymentIntent?.status === "requires_capture"
+        ? TEXT.paymentAuthorized
+        : TEXT.paymentSuccessful
+    );
     persistCartId(null);
     state.cart = null;
     destroyExpressCheckout();
@@ -1235,7 +1273,15 @@ async function runConfirmation(event) {
     console.warn("Standalone Express Checkout confirmation failed.", error);
     notifyPaymentFailure(event);
     setBadge(dom.paymentStatus, TEXT.paymentFailed, "error");
-    log("payment/error", { name: error.name, message: error.message });
+    log("payment/failed", {
+      message: error?.message || TEXT.paymentFailed,
+      name: error?.name,
+      type: error?.type,
+      code: error?.code,
+      declineCode: error?.decline_code,
+      paymentIntentId: error?.payment_intent?.id,
+    });
+    notifyError(error?.message || TEXT.paymentFailed);
     return false;
   } finally {
     state.confirmationInProgress = false;
@@ -1257,6 +1303,11 @@ function registerExpressCheckoutHandlers() {
   state.expressCheckoutElement.on("click", (event) => {
     state.modalOpen = true;
     setCheckoutBlocked(true);
+    log("wallet/clicked", {
+      cartId: state.cartId,
+      amount: state.currentAmount,
+      currency: state.currentCurrency,
+    });
     event.resolve({ shippingRates: state.currentShippingRates });
   });
   state.expressCheckoutElement.on("confirm", handleConfirm);
@@ -1276,20 +1327,33 @@ function registerExpressCheckoutHandlers() {
       event.error
     );
     state.elementLoadFailed = true;
+    log("wallet/loaderror", {
+      message: event.error?.message,
+      type: event.error?.type,
+      code: event.error?.code,
+    });
     handleModalDismissed();
     hideExpressCheckout();
   });
   state.expressCheckoutElement.on("ready", (event) => {
     if (event.availablePaymentMethods) {
+      log("wallet/ready", {
+        availablePaymentMethods: event.availablePaymentMethods,
+      });
       showExpressCheckout();
     } else {
+      log("wallet/unavailable", { reason: TEXT.walletUnavailable });
       hideExpressCheckout(TEXT.walletUnavailable);
     }
   });
   state.expressCheckoutElement.on("availablepaymentmethodschange", (event) => {
     if (event.paymentMethods) {
+      log("wallet/payment-methods-changed", {
+        paymentMethods: event.paymentMethods,
+      });
       showExpressCheckout();
     } else {
+      log("wallet/unavailable", { reason: TEXT.walletUnavailable });
       hideExpressCheckout(TEXT.walletUnavailable);
     }
   });
@@ -1426,6 +1490,10 @@ async function handleCreateCart() {
   dom.createCartButton.disabled = true;
   try {
     await createOrLoadCart();
+    log("cart/ready", {
+      cartId: state.cartId,
+      total: state.cart?.prices?.grand_total,
+    });
     notifySuccess(state.cartId ? `Cart ready: ${state.cartId}` : "Cart ready.");
   } catch (error) {
     setBadge(dom.cartStatus, error.message, "error");
@@ -1463,6 +1531,12 @@ async function handleAddProduct(event) {
     }
     await refreshCart();
     setBadge(dom.cartStatus, TEXT.addedProduct, "success");
+    log("cart/product-added", {
+      cartId: state.cartId,
+      sku,
+      quantity,
+      total: state.cart?.prices?.grand_total,
+    });
     notifySuccess(`Added ${quantity} × ${sku}.`);
   } catch (error) {
     setBadge(dom.cartStatus, error.message, "error");
