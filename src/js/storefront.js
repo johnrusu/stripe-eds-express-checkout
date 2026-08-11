@@ -1,6 +1,6 @@
 /* global Stripe */
 
-import { notifyError, notifySuccess } from "./notifications.js";
+import { notifyError, notifySuccess, notifyWarning } from "./notifications.js";
 
 const STRIPE_PAYMENT_METHOD_CODE = "oope_stripe";
 const CONFIG_STORAGE_KEY = "STRIPE_ECE_STOREFRONT_CONFIG";
@@ -245,6 +245,7 @@ const dom = {
   cartId: document.querySelector("#cart-id"),
   cartStatus: document.querySelector("#cart-status"),
   clearLogButton: document.querySelector("#clear-log-button"),
+  copyLogButton: document.querySelector("#copy-log-button"),
   clearSessionButton: document.querySelector("#clear-session-button"),
   commerceUrl: document.querySelector("#commerce-url"),
   configurationForm: document.querySelector("#configuration-form"),
@@ -278,6 +279,8 @@ const state = {
   cartId: null,
   configurationKey: null,
   confirmationInProgress: false,
+  connected: false,
+  connectedCommerceUrl: null,
   currentAmount: null,
   currentCurrency: null,
   currentShippingRates: [],
@@ -409,6 +412,65 @@ function persistCartId(cartId) {
   } else {
     window.sessionStorage.removeItem(CART_STORAGE_KEY);
   }
+  syncAddProductAvailability();
+}
+
+function hasCartId() {
+  return Boolean(dom.cartId.value.trim() || state.cartId);
+}
+
+function syncAddProductAvailability() {
+  dom.addProductButton.disabled = !hasCartId();
+}
+
+function syncCreateCartAvailability() {
+  dom.createCartButton.disabled = !state.connected;
+}
+
+function setConnected(connected, commerceUrl = null) {
+  state.connected = Boolean(connected);
+  state.connectedCommerceUrl = state.connected
+    ? String(commerceUrl || "").trim() || null
+    : null;
+  syncCreateCartAvailability();
+}
+
+function clearCartSession() {
+  window.sessionStorage.removeItem(CART_STORAGE_KEY);
+  persistCartId(null);
+  state.cart = null;
+  destroyExpressCheckout();
+  hideExpressCheckout();
+  hideOrderSuccess();
+  setBadge(dom.cartStatus, TEXT.noCart);
+  renderCartSummary();
+}
+
+function handleCommerceUrlChange() {
+  if (!state.connected || !state.connectedCommerceUrl) {
+    return;
+  }
+
+  const previousCommerceUrl = state.connectedCommerceUrl;
+  const nextUrl = dom.commerceUrl.value.trim();
+  if (nextUrl === previousCommerceUrl) {
+    return;
+  }
+
+  const hadCart = Boolean(state.cartId || state.cart);
+  clearCartSession();
+  setConnected(false);
+  setBadge(dom.connectionStatus, TEXT.notConnected);
+  log("configuration/commerce-url-changed", {
+    previousCommerceUrl,
+    commerceUrl: nextUrl,
+    clearedCart: hadCart,
+  });
+  notifyWarning(
+    hadCart
+      ? "Adobe Commerce URL changed. Connection and cart were cleared — connect again."
+      : "Adobe Commerce URL changed. Connection was cleared — connect again."
+  );
 }
 
 function getStripePaymentMethod(cart = state.cart) {
@@ -717,8 +779,8 @@ function destroyExpressCheckout() {
 }
 
 function hideExpressCheckout(message = null) {
-  dom.expressCheckoutSection.classList.add("storefront-hidden");
-  dom.wallet.classList.remove("storefront-loading");
+  dom.expressCheckoutSection.classList.add("hidden");
+  dom.wallet.classList.remove("opacity-25");
   if (message) {
     setBadge(dom.paymentStatus, message, "error");
   }
@@ -728,8 +790,8 @@ function showExpressCheckout() {
   if (state.elementLoadFailed) {
     return;
   }
-  dom.expressCheckoutSection.classList.remove("storefront-hidden");
-  dom.wallet.classList.remove("storefront-loading");
+  dom.expressCheckoutSection.classList.remove("hidden");
+  dom.wallet.classList.remove("opacity-25");
   setBadge(dom.paymentStatus, TEXT.ready, "success");
 }
 
@@ -1193,8 +1255,8 @@ async function mountExpressCheckout() {
   }
 
   destroyExpressCheckout();
-  dom.wallet.classList.add("storefront-loading");
-  dom.expressCheckoutSection.classList.remove("storefront-hidden");
+  dom.wallet.classList.add("opacity-25");
+  dom.expressCheckoutSection.classList.remove("hidden");
   setBadge(dom.paymentStatus, TEXT.loading, "loading");
 
   try {
@@ -1276,7 +1338,20 @@ async function handleConnect(event) {
   setBadge(dom.connectionStatus, TEXT.connecting, "loading");
   try {
     const config = getConfig();
+    if (
+      state.connectedCommerceUrl &&
+      config.commerceUrl !== state.connectedCommerceUrl
+    ) {
+      const hadCart = Boolean(state.cartId || state.cart);
+      clearCartSession();
+      if (hadCart) {
+        notifyWarning(
+          "Adobe Commerce URL changed. Previous cart was cleared before connecting."
+        );
+      }
+    }
     savePublicConfiguration(config);
+    setConnected(true, config.commerceUrl);
     setBadge(dom.connectionStatus, TEXT.connected, "success");
     if (dom.cartId.value.trim() || config.customerToken) {
       await refreshCart();
@@ -1288,6 +1363,7 @@ async function handleConnect(event) {
     });
     notifySuccess("Storefront connected.");
   } catch (error) {
+    setConnected(false);
     setBadge(dom.connectionStatus, error.message, "error");
     log("configuration/error", { message: error.message });
     notifyError(error.message || "Unable to connect.");
@@ -1295,6 +1371,11 @@ async function handleConnect(event) {
 }
 
 async function handleCreateCart() {
+  if (!state.connected) {
+    notifyError(TEXT.notConnected);
+    return;
+  }
+
   dom.createCartButton.disabled = true;
   try {
     await createOrLoadCart();
@@ -1304,17 +1385,21 @@ async function handleCreateCart() {
     log("cart/create-error", { message: error.message });
     notifyError(error.message || "Unable to create or load cart.");
   } finally {
-    dom.createCartButton.disabled = false;
+    syncCreateCartAvailability();
   }
 }
 
 async function handleAddProduct(event) {
   event.preventDefault();
+  if (!hasCartId()) {
+    notifyError(TEXT.cartMissing);
+    return;
+  }
+
   dom.addProductButton.disabled = true;
   try {
-    if (!state.cartId) {
-      await createOrLoadCart();
-    }
+    const cartId = dom.cartId.value.trim() || state.cartId;
+    persistCartId(cartId);
     const sku = dom.productSku.value.trim();
     const quantity = Number(dom.productQuantity.value);
     if (!sku || !Number.isFinite(quantity) || quantity <= 0) {
@@ -1337,7 +1422,7 @@ async function handleAddProduct(event) {
     log("cart/add-product-error", { message: error.message });
     notifyError(error.message || "Unable to add product.");
   } finally {
-    dom.addProductButton.disabled = false;
+    syncAddProductAvailability();
   }
 }
 
@@ -1357,26 +1442,22 @@ async function handleRefreshCart() {
 
 function clearLocalSession() {
   window.localStorage.removeItem(CONFIG_STORAGE_KEY);
-  window.sessionStorage.removeItem(CART_STORAGE_KEY);
-  persistCartId(null);
-  state.cart = null;
-  destroyExpressCheckout();
+  clearCartSession();
+  setConnected(false);
   dom.commerceUrl.value = "";
   dom.runtimeBaseUrl.value = "";
   dom.customerToken.value = "";
   dom.storeCode.value = "default";
   dom.log.textContent = "";
   setBadge(dom.connectionStatus, TEXT.notConnected);
-  setBadge(dom.cartStatus, TEXT.noCart);
-  hideExpressCheckout();
-  hideOrderSuccess();
-  renderCartSummary();
   notifySuccess("Local session cleared.");
 }
 
 dom.configurationForm.addEventListener("submit", handleConnect);
+dom.commerceUrl.addEventListener("change", handleCommerceUrlChange);
 dom.createCartButton.addEventListener("click", handleCreateCart);
 dom.cartForm.addEventListener("submit", handleAddProduct);
+dom.cartId.addEventListener("input", syncAddProductAvailability);
 dom.refreshCartButton.addEventListener("click", handleRefreshCart);
 dom.clearSessionButton.addEventListener("click", clearLocalSession);
 dom.clearLogButton.addEventListener("click", () => {
@@ -1384,5 +1465,45 @@ dom.clearLogButton.addEventListener("click", () => {
   notifySuccess("Checkout log cleared.");
 });
 
+async function copyTextToClipboard(text) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.left = "-9999px";
+  document.body.appendChild(textarea);
+  textarea.select();
+
+  try {
+    if (!document.execCommand("copy")) {
+      throw new Error("Copy command failed.");
+    }
+  } finally {
+    textarea.remove();
+  }
+}
+
+dom.copyLogButton.addEventListener("click", async () => {
+  const text = dom.log.textContent || "";
+  if (!text.trim()) {
+    notifyError("Checkout log is empty.");
+    return;
+  }
+
+  try {
+    await copyTextToClipboard(text);
+    notifySuccess("Checkout log copied.");
+  } catch {
+    notifyError("Unable to copy the checkout log.");
+  }
+});
+
 restoreConfiguration();
 renderCartSummary();
+syncCreateCartAvailability();
+syncAddProductAvailability();
