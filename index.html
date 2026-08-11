@@ -50,7 +50,9 @@
           stroke-linecap="round"
           stroke-linejoin="round"
         >
-          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+          <path
+            d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
+          />
           <path d="M12 9v4" />
           <path d="M12 17h.01" />
         </svg>
@@ -87,11 +89,14 @@
           <p class="mt-2 mb-1 font-bold">Windows</p>
           <pre
             class="m-0 overflow-x-auto rounded-lg bg-sky-100/80 px-3 py-2 font-mono text-[0.78rem] leading-snug whitespace-pre-wrap text-sky-950"
-          >chrome.exe --user-data-dir="C:\Chrome dev session" --disable-web-security</pre>
+          >
+chrome.exe --user-data-dir="C:\Chrome dev session" --disable-web-security</pre>
           <p class="mt-2 mb-1 font-bold">macOS</p>
           <pre
             class="m-0 overflow-x-auto rounded-lg bg-sky-100/80 px-3 py-2 font-mono text-[0.78rem] leading-snug whitespace-pre-wrap text-sky-950"
-          >open -a "Google Chrome" --args --disable-web-security --user-data-dir="/tmp/chrome-dev-session"</pre>
+          >
+open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args --user-data-dir="/tmp/chrome_dev_test" --disable-web-security
+</pre>
         </div>
       </div>
 
@@ -108,7 +113,10 @@
             >
               Step 1
             </p>
-            <h2 id="configuration-heading" class="mt-[3px] mb-0 text-xl text-ink-strong">
+            <h2
+              id="configuration-heading"
+              class="mt-[3px] mb-0 text-xl text-ink-strong"
+            >
               Connect the storefront
             </h2>
           </div>
@@ -152,7 +160,9 @@
           </label>
 
           <label class="grid gap-[7px]">
-            <span class="text-[0.82rem] font-bold text-gray-700">Store view</span>
+            <span class="text-[0.82rem] font-bold text-gray-700"
+              >Store view</span
+            >
             <input
               id="store-code"
               class="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-[11px] py-[9px] text-ink-strong focus:border-stripe focus:ring-[3px] focus:ring-stripe/14 focus:outline-none"
@@ -291,7 +301,10 @@
           >
         </div>
 
-        <form id="cart-form" class="grid grid-cols-1 gap-4 min-[701px]:grid-cols-2">
+        <form
+          id="cart-form"
+          class="grid grid-cols-1 gap-4 min-[701px]:grid-cols-2"
+        >
           <label class="grid gap-[7px] min-[701px]:col-span-2">
             <span class="text-[0.82rem] font-bold text-gray-700">Cart ID</span>
             <input
@@ -304,7 +317,9 @@
           </label>
 
           <label class="grid gap-[7px]">
-            <span class="text-[0.82rem] font-bold text-gray-700">Product SKU</span>
+            <span class="text-[0.82rem] font-bold text-gray-700"
+              >Product SKU</span
+            >
             <input
               id="product-sku"
               class="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-[11px] py-[9px] text-ink-strong focus:border-stripe focus:ring-[3px] focus:ring-stripe/14 focus:outline-none"
@@ -379,10 +394,10 @@
           </div>
         </form>
 
-        <dl
-          class="mt-[22px] grid grid-cols-1 gap-3 min-[701px]:grid-cols-3"
-        >
-          <div class="min-h-[72px] rounded-[9px] bg-gray-50 px-[13px] py-[11px]">
+        <dl class="mt-[22px] grid grid-cols-1 gap-3 min-[701px]:grid-cols-3">
+          <div
+            class="min-h-[72px] rounded-[9px] bg-gray-50 px-[13px] py-[11px]"
+          >
             <dt
               class="text-[0.7rem] font-[750] tracking-[0.06em] text-gray-500 uppercase"
             >
@@ -395,7 +410,9 @@
               —
             </dd>
           </div>
-          <div class="min-h-[72px] rounded-[9px] bg-gray-50 px-[13px] py-[11px]">
+          <div
+            class="min-h-[72px] rounded-[9px] bg-gray-50 px-[13px] py-[11px]"
+          >
             <dt
               class="text-[0.7rem] font-[750] tracking-[0.06em] text-gray-500 uppercase"
             >
@@ -405,7 +422,9 @@
               —
             </dd>
           </div>
-          <div class="min-h-[72px] rounded-[9px] bg-gray-50 px-[13px] py-[11px]">
+          <div
+            class="min-h-[72px] rounded-[9px] bg-gray-50 px-[13px] py-[11px]"
+          >
             <dt
               class="text-[0.7rem] font-[750] tracking-[0.06em] text-gray-500 uppercase"
             >
@@ -418,7 +437,9 @@
               —
             </dd>
           </div>
-          <div class="min-h-[72px] rounded-[9px] bg-gray-50 px-[13px] py-[11px]">
+          <div
+            class="min-h-[72px] rounded-[9px] bg-gray-50 px-[13px] py-[11px]"
+          >
             <dt
               class="text-[0.7rem] font-[750] tracking-[0.06em] text-gray-500 uppercase"
             >
@@ -431,23 +452,33 @@
               —
             </dd>
           </div>
-          <div class="min-h-[72px] rounded-[9px] bg-gray-50 px-[13px] py-[11px]">
+          <div
+            class="min-h-[72px] rounded-[9px] bg-gray-50 px-[13px] py-[11px]"
+          >
             <dt
               class="text-[0.7rem] font-[750] tracking-[0.06em] text-gray-500 uppercase"
             >
               Stripe OOPE
             </dt>
-            <dd id="summary-stripe" class="mt-1.5 mb-0 [overflow-wrap:anywhere]">
+            <dd
+              id="summary-stripe"
+              class="mt-1.5 mb-0 [overflow-wrap:anywhere]"
+            >
               —
             </dd>
           </div>
-          <div class="min-h-[72px] rounded-[9px] bg-gray-50 px-[13px] py-[11px]">
+          <div
+            class="min-h-[72px] rounded-[9px] bg-gray-50 px-[13px] py-[11px]"
+          >
             <dt
               class="text-[0.7rem] font-[750] tracking-[0.06em] text-gray-500 uppercase"
             >
               Capture mode
             </dt>
-            <dd id="summary-capture" class="mt-1.5 mb-0 [overflow-wrap:anywhere]">
+            <dd
+              id="summary-capture"
+              class="mt-1.5 mb-0 [overflow-wrap:anywhere]"
+            >
               —
             </dd>
           </div>
@@ -512,7 +543,10 @@
           <h2 class="m-0 text-[clamp(1.45rem,4vw,2rem)] text-emerald-900">
             Thank you for your order
           </h2>
-          <p id="order-success-message" class="m-0 text-base text-emerald-700"></p>
+          <p
+            id="order-success-message"
+            class="m-0 text-base text-emerald-700"
+          ></p>
           <button
             id="start-over-button"
             type="button"
