@@ -34,10 +34,9 @@ src/
   css/storefront.css       # Tailwind entry + theme tokens
   js/
     storefront.js          # ECE + Commerce orchestration
+    constants.js           # Copy, selectors, GraphQL, Stripe identifiers
     environments.js        # SaaS / PaaS presets
     notifications.js       # Toast notifications
-    index.js               # Local form persistence helpers
-    utils.js
 scripts/commit.sh
 .github/workflows/deploy-pages.yml
 ```

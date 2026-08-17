@@ -1,277 +1,88 @@
 /* global Stripe */
 
+import {
+  ADD_PRODUCT,
+  ARIA,
+  BADGE_STATE,
+  CART_STORAGE_KEY,
+  CLIPBOARD,
+  COMMERCE_URL_PATTERN,
+  CONFIG_STORAGE_KEY,
+  CONSOLE,
+  CREATE_GUEST_CART,
+  CSS_CLASS,
+  DATASET,
+  DEFAULT_PRODUCT_QUANTITY,
+  DEFAULT_STORE_CODE,
+  DOM_EVENT,
+  EMPTY_DISPLAY,
+  ENVIRONMENTS,
+  ESTIMATE_SHIPPING_METHODS,
+  GET_CUSTOMER_CART,
+  GET_GUEST_CART,
+  HTML_ELEMENT,
+  HTTP,
+  JSON_NULL,
+  LEGACY_CONFIGURATION_STORAGE_KEY,
+  LOG,
+  NUMBER_FORMAT,
+  PLACE_ORDER,
+  RUNTIME_PATH,
+  SELECTOR,
+  SEPARATOR,
+  SET_BILLING_ADDRESS,
+  SET_GUEST_EMAIL,
+  SET_PAAS_PAYMENT_METHOD,
+  SET_PAYMENT_METHOD,
+  SET_SHIPPING_ADDRESS,
+  SET_SHIPPING_METHOD,
+  STRIPE,
+  STRIPE_PAYMENT_METHOD_CODE,
+  STRIPE_PAYMENT_STATUS,
+  SUPPORTED_PAYMENT_STATUSES,
+  TEXT,
+  WALLET_NAME_SPLIT_PATTERN,
+  WINDOW_SCROLL_TOP,
+} from "./constants.js";
 import { notifyError, notifySuccess, notifyWarning } from "./notifications.js";
-import { ENVIRONMENTS } from "./environments.js";
-
-const STRIPE_PAYMENT_METHOD_CODE = "oope_stripe";
-const CONFIG_STORAGE_KEY = "STRIPE_ECE_STOREFRONT_CONFIG";
-const CART_STORAGE_KEY = "STRIPE_ECE_STOREFRONT_CART_ID";
-const SUPPORTED_PAYMENT_STATUSES = new Set([
-  "processing",
-  "requires_capture",
-  "succeeded",
-]);
-
-const TEXT = {
-  addedProduct: "Product added",
-  available: "Available",
-  cartLoaded: "Cart loaded",
-  cartMissing: "Create or load a cart first.",
-  connected: "Connected",
-  connecting: "Connecting…",
-  customerRegistered: "Registered customer",
-  guest: "Guest",
-  initializationFailed: "Express Checkout initialization failed.",
-  invalidConfiguration: "Enter a valid Commerce GraphQL URL.",
-  loading: "Loading…",
-  missing: "Missing",
-  noCart: "No cart",
-  notConnected: "Not connected",
-  notAvailable: "Unavailable",
-  orderPlaced: "Order placed",
-  paymentAuthorized: "Payment authorized",
-  paymentSuccessful: "Payment successful",
-  orderConfirmed: (number) =>
-    number
-      ? `Order ${number} has been confirmed.`
-      : "Your order has been confirmed.",
-  paymentFailed: "Payment failed",
-  ready: "Ready",
-  runtimeMissing: "Stripe runtime configuration is unavailable on this cart.",
-  stripeMissing: "Stripe OOPE is not available on this cart.",
-  walletUnavailable: "No supported wallet is available in this browser.",
-};
-
-const CART_FIELDS = `
-  id
-  email
-  is_virtual
-  prices {
-    grand_total { value currency }
-  }
-  billing_address {
-    firstname
-    lastname
-    street
-    city
-    region { code }
-    postcode
-    country { code }
-    telephone
-  }
-  shipping_addresses {
-    firstname
-    lastname
-    street
-    city
-    region { code }
-    postcode
-    country { code }
-    telephone
-    available_shipping_methods {
-      carrier_code
-      carrier_title
-      method_code
-      method_title
-      amount { value currency }
-      price_excl_tax { value currency }
-      price_incl_tax { value currency }
-    }
-    selected_shipping_method {
-      carrier_code
-      carrier_title
-      method_code
-      method_title
-      amount { value currency }
-      price_excl_tax { value currency }
-      price_incl_tax { value currency }
-    }
-  }
-  available_payment_methods {
-    code
-    title
-    oope_payment_method_config {
-      backend_integration_url
-    }
-  }
-  selected_payment_method {
-    code
-    title
-    oope_payment_method_config {
-      backend_integration_url
-    }
-  }
-`;
-
-const CREATE_GUEST_CART = `
-  mutation CreateGuestCart {
-    createGuestCart {
-      cart { id }
-    }
-  }
-`;
-
-const GET_GUEST_CART = `
-  query GetGuestCart($cartId: String!) {
-    cart(cart_id: $cartId) {
-      ${CART_FIELDS}
-    }
-  }
-`;
-
-const GET_CUSTOMER_CART = `
-  query GetCustomerCart {
-    cart: customerCart {
-      ${CART_FIELDS}
-    }
-  }
-`;
-
-const ADD_PRODUCT = `
-  mutation AddProduct($cartId: String!, $sku: String!, $quantity: Float!) {
-    addProductsToCart(
-      cartId: $cartId
-      cartItems: [{ sku: $sku, quantity: $quantity }]
-    ) {
-      cart { id }
-      user_errors { code message }
-    }
-  }
-`;
-
-const SET_GUEST_EMAIL = `
-  mutation SetGuestEmail($cartId: String!, $email: String!) {
-    setGuestEmailOnCart(input: { cart_id: $cartId, email: $email }) {
-      cart { id email }
-    }
-  }
-`;
-
-const SET_SHIPPING_ADDRESS = `
-  mutation SetShippingAddress(
-    $cartId: String!
-    $shippingAddress: ShippingAddressInput!
-  ) {
-    setShippingAddressesOnCart(
-      input: { cart_id: $cartId, shipping_addresses: [$shippingAddress] }
-    ) {
-      cart { id }
-    }
-  }
-`;
-
-const ESTIMATE_SHIPPING_METHODS = `
-  mutation EstimateShippingMethods(
-    $cartId: String!
-    $address: EstimateAddressInput!
-  ) {
-    estimateShippingMethods(input: { cart_id: $cartId, address: $address }) {
-      carrier_code
-      carrier_title
-      method_code
-      method_title
-      amount { value currency }
-      price_excl_tax { value currency }
-      price_incl_tax { value currency }
-    }
-  }
-`;
-
-const SET_SHIPPING_METHOD = `
-  mutation SetShippingMethod(
-    $cartId: String!
-    $shippingMethods: [ShippingMethodInput]!
-  ) {
-    setShippingMethodsOnCart(
-      input: { cart_id: $cartId, shipping_methods: $shippingMethods }
-    ) {
-      cart { id }
-    }
-  }
-`;
-
-const SET_BILLING_ADDRESS = `
-  mutation SetBillingAddress(
-    $cartId: String!
-    $billingAddress: BillingAddressInput!
-  ) {
-    setBillingAddressOnCart(
-      input: { cart_id: $cartId, billing_address: $billingAddress }
-    ) {
-      cart { id }
-    }
-  }
-`;
-
-const SET_PAYMENT_METHOD = `
-  mutation SetPaymentMethod($cartId: String!, $input: PaymentMethodInput!) {
-    setPaymentMethodOnCart(
-      input: { cart_id: $cartId, payment_method: $input }
-    ) {
-      cart { id selected_payment_method { code title } }
-    }
-  }
-`;
-
-const SET_PAAS_PAYMENT_METHOD = `
-  mutation SetPaaSPaymentMethod($cartId: String!, $clientSecret: String!) {
-    setPaymentMethodOnCart(
-      input: {
-        cart_id: $cartId
-        payment_method: {
-          code: "oope_stripe"
-          oope_stripe: { client_secret: $clientSecret }
-        }
-      }
-    ) {
-      cart { id selected_payment_method { code title } }
-    }
-  }
-`;
-
-const PLACE_ORDER = `
-  mutation PlaceOrder($cartId: String!) {
-    placeOrder(input: { cart_id: $cartId }) {
-      orderV2 { number token }
-      errors { code message }
-    }
-  }
-`;
 
 const dom = {
-  addProductButton: document.querySelector("#add-product-button"),
-  blocker: document.querySelector("#checkout-blocker"),
-  cartForm: document.querySelector("#cart-form"),
-  cartId: document.querySelector("#cart-id"),
-  cartStatus: document.querySelector("#cart-status"),
-  clearLogButton: document.querySelector("#clear-log-button"),
-  copyLogButton: document.querySelector("#copy-log-button"),
-  clearSessionButton: document.querySelector("#clear-session-button"),
-  commerceUrl: document.querySelector("#commerce-url"),
-  configurationForm: document.querySelector("#configuration-form"),
-  connectionStatus: document.querySelector("#connection-status"),
-  createCartButton: document.querySelector("#create-cart-button"),
-  customerToken: document.querySelector("#customer-token"),
-  environmentPreset: document.querySelector("#environment-preset"),
-  expressCheckoutSection: document.querySelector("#express-checkout-section"),
-  log: document.querySelector("#storefront-log"),
-  paymentContent: document.querySelector("#payment-content"),
-  paymentStatus: document.querySelector("#payment-status"),
-  orderSuccess: document.querySelector("#order-success"),
-  orderSuccessMessage: document.querySelector("#order-success-message"),
-  orderSuccessTitle: document.querySelector("#order-success-title"),
-  startOverButton: document.querySelector("#start-over-button"),
-  productQuantity: document.querySelector("#product-quantity"),
-  productSku: document.querySelector("#product-sku"),
-  runtimeBaseUrl: document.querySelector("#runtime-base-url"),
-  storeCode: document.querySelector("#store-code"),
-  summaryCapture: document.querySelector("#summary-capture"),
-  summaryCustomer: document.querySelector("#summary-customer"),
-  summaryShippingAddress: document.querySelector("#summary-shipping-address"),
-  summaryShippingMethod: document.querySelector("#summary-shipping-method"),
-  summaryStripe: document.querySelector("#summary-stripe"),
-  summaryTotal: document.querySelector("#summary-total"),
-  wallet: document.querySelector("#express-checkout-element"),
+  addProductButton: document.querySelector(SELECTOR.addProductButton),
+  blocker: document.querySelector(SELECTOR.blocker),
+  cartForm: document.querySelector(SELECTOR.cartForm),
+  cartId: document.querySelector(SELECTOR.cartId),
+  cartStatus: document.querySelector(SELECTOR.cartStatus),
+  clearLogButton: document.querySelector(SELECTOR.clearLogButton),
+  copyLogButton: document.querySelector(SELECTOR.copyLogButton),
+  clearSessionButton: document.querySelector(SELECTOR.clearSessionButton),
+  commerceUrl: document.querySelector(SELECTOR.commerceUrl),
+  configurationForm: document.querySelector(SELECTOR.configurationForm),
+  connectionStatus: document.querySelector(SELECTOR.connectionStatus),
+  createCartButton: document.querySelector(SELECTOR.createCartButton),
+  customerToken: document.querySelector(SELECTOR.customerToken),
+  environmentPreset: document.querySelector(SELECTOR.environmentPreset),
+  expressCheckoutSection: document.querySelector(SELECTOR.expressCheckoutSection),
+  log: document.querySelector(SELECTOR.log),
+  paymentContent: document.querySelector(SELECTOR.paymentContent),
+  paymentStatus: document.querySelector(SELECTOR.paymentStatus),
+  orderSuccess: document.querySelector(SELECTOR.orderSuccess),
+  orderSuccessMessage: document.querySelector(SELECTOR.orderSuccessMessage),
+  orderSuccessTitle: document.querySelector(SELECTOR.orderSuccessTitle),
+  startOverButton: document.querySelector(SELECTOR.startOverButton),
+  productQuantity: document.querySelector(SELECTOR.productQuantity),
+  productSku: document.querySelector(SELECTOR.productSku),
+  runtimeBaseUrl: document.querySelector(SELECTOR.runtimeBaseUrl),
+  storeCode: document.querySelector(SELECTOR.storeCode),
+  summaryCapture: document.querySelector(SELECTOR.summaryCapture),
+  summaryCustomer: document.querySelector(SELECTOR.summaryCustomer),
+  summaryShippingAddress: document.querySelector(SELECTOR.summaryShippingAddress),
+  summaryShippingMethod: document.querySelector(SELECTOR.summaryShippingMethod),
+  summaryStripe: document.querySelector(SELECTOR.summaryStripe),
+  summaryTotal: document.querySelector(SELECTOR.summaryTotal),
+  wallet: document.querySelector(SELECTOR.wallet),
+  purgeLocalStorageButton: document.querySelector(
+    SELECTOR.purgeLocalStorageButton
+  ),
 };
 
 const state = {
@@ -300,9 +111,9 @@ const state = {
 function setBadge(element, message, status = "") {
   element.textContent = message;
   if (status) {
-    element.dataset.state = status;
+    element.dataset[DATASET.STATE] = status;
   } else {
-    delete element.dataset.state;
+    delete element.dataset[DATASET.STATE];
   }
 }
 
@@ -339,7 +150,7 @@ function normalizeBaseUrl(value) {
 
 function getConfig() {
   const commerceUrl = dom.commerceUrl.value.trim();
-  if (!/^https?:\/\//i.test(commerceUrl)) {
+  if (!COMMERCE_URL_PATTERN.test(commerceUrl)) {
     throw new Error(TEXT.invalidConfiguration);
   }
 
@@ -347,7 +158,7 @@ function getConfig() {
     commerceUrl,
     customerToken: dom.customerToken.value.trim(),
     runtimeBaseUrl: normalizeBaseUrl(dom.runtimeBaseUrl.value),
-    storeCode: dom.storeCode.value.trim() || "default",
+    storeCode: dom.storeCode.value.trim() || DEFAULT_STORE_CODE,
   };
 }
 
@@ -365,14 +176,16 @@ function savePublicConfiguration(config) {
 }
 
 function restoreConfiguration() {
+  window.localStorage.removeItem(LEGACY_CONFIGURATION_STORAGE_KEY);
+
   try {
     const config = JSON.parse(
-      window.localStorage.getItem(CONFIG_STORAGE_KEY) || "null"
+      window.localStorage.getItem(CONFIG_STORAGE_KEY) || JSON_NULL
     );
     if (config) {
       dom.commerceUrl.value = config.commerceUrl || "";
       dom.runtimeBaseUrl.value = config.runtimeBaseUrl || "";
-      dom.storeCode.value = config.storeCode || "default";
+      dom.storeCode.value = config.storeCode || DEFAULT_STORE_CODE;
       if (config.environmentPreset && ENVIRONMENTS[config.environmentPreset]) {
         dom.environmentPreset.value = config.environmentPreset;
       } else {
@@ -381,7 +194,7 @@ function restoreConfiguration() {
     }
   } catch (error) {
     console.warn(
-      "Unable to restore standalone storefront configuration.",
+      CONSOLE.restoreConfigurationFailed,
       error
     );
   }
@@ -415,14 +228,14 @@ function applyEnvironmentPreset(presetKey, { notify = true } = {}) {
 
   syncStorageActionAvailability();
   syncCartActionAvailability();
-  log("configuration/environment-preset", {
+  log(LOG.environmentPreset, {
     environment: presetKey,
     commerceGraphqlUrl: preset.commerceGraphqlUrl,
     productSku: preset.productSku,
   });
 
   if (notify) {
-    notifySuccess(`Loaded ${preset.label} preset.`);
+    notifySuccess(TEXT.loadedPreset(preset.label));
   }
 }
 
@@ -440,10 +253,12 @@ function syncEnvironmentPresetSelection() {
 function getCommerceHeaders() {
   const config = getConfig();
   return {
-    "Content-Type": "application/json",
-    Store: config.storeCode,
+    [HTTP.CONTENT_TYPE]: HTTP.CONTENT_TYPE_JSON,
+    [HTTP.HEADER_STORE]: config.storeCode,
     ...(config.customerToken
-      ? { Authorization: `Bearer ${config.customerToken}` }
+      ? {
+          [HTTP.HEADER_AUTHORIZATION]: `${HTTP.BEARER_PREFIX}${config.customerToken}`,
+        }
       : {}),
   };
 }
@@ -451,8 +266,8 @@ function getCommerceHeaders() {
 async function commerceGraphql(query, variables = {}) {
   const config = getConfig();
   const response = await fetch(config.commerceUrl, {
-    method: "POST",
-    credentials: "include",
+    method: HTTP.METHOD_POST,
+    credentials: HTTP.CREDENTIALS_INCLUDE,
     headers: getCommerceHeaders(),
     body: JSON.stringify({ query, variables }),
   });
@@ -460,7 +275,7 @@ async function commerceGraphql(query, variables = {}) {
 
   if (!response.ok || result?.errors?.length) {
     const message =
-      result?.errors?.map((error) => error.message).join(" ") ||
+      result?.errors?.map((error) => error.message).join(SEPARATOR.SPACE) ||
       `${response.status} ${response.statusText}`;
     throw new Error(message);
   }
@@ -508,7 +323,7 @@ function hasLocalSession() {
       dom.runtimeBaseUrl.value.trim() ||
       dom.customerToken.value.trim() ||
       (dom.storeCode.value.trim() &&
-        dom.storeCode.value.trim() !== "default") ||
+        dom.storeCode.value.trim() !== DEFAULT_STORE_CODE) ||
       hasLogContent()
   );
 }
@@ -521,9 +336,8 @@ function syncStorageActionAvailability() {
   if (dom.clearSessionButton) {
     dom.clearSessionButton.disabled = !hasLocalSession();
   }
-  const purgeButton = document.querySelector("#purge-local-storage-button");
-  if (purgeButton) {
-    purgeButton.disabled = !hasLocalStorageData();
+  if (dom.purgeLocalStorageButton) {
+    dom.purgeLocalStorageButton.disabled = !hasLocalStorageData();
   }
 }
 
@@ -561,15 +375,15 @@ function handleCommerceUrlChange() {
   clearCartSession();
   setConnected(false);
   setBadge(dom.connectionStatus, TEXT.notConnected);
-  log("configuration/commerce-url-changed", {
+  log(LOG.commerceUrlChanged, {
     previousCommerceUrl,
     commerceUrl: nextUrl,
     clearedCart: hadCart,
   });
   notifyWarning(
     hadCart
-      ? "Adobe Commerce URL changed. Connection and cart were cleared — connect again."
-      : "Adobe Commerce URL changed. Connection was cleared — connect again."
+      ? TEXT.commerceUrlChangedWithCart
+      : TEXT.commerceUrlChangedWithoutCart
   );
 }
 
@@ -584,8 +398,8 @@ function discoverRuntimeConfig(cart = state.cart) {
   const config = getConfig();
   if (config.runtimeBaseUrl) {
     return {
-      createPaymentIntentUrl: `${config.runtimeBaseUrl}/payment-intent`,
-      getInitParamsUrl: `${config.runtimeBaseUrl}/init-params`,
+      createPaymentIntentUrl: `${config.runtimeBaseUrl}${RUNTIME_PATH.PAYMENT_INTENT}`,
+      getInitParamsUrl: `${config.runtimeBaseUrl}${RUNTIME_PATH.INIT_PARAMS}`,
     };
   }
 
@@ -609,7 +423,7 @@ function discoverRuntimeConfig(cart = state.cart) {
 async function createOrLoadCart() {
   const config = getConfig();
   hideOrderSuccess();
-  setBadge(dom.cartStatus, TEXT.loading, "loading");
+  setBadge(dom.cartStatus, TEXT.loading, BADGE_STATE.LOADING);
 
   if (config.customerToken) {
     const data = await commerceGraphql(GET_CUSTOMER_CART);
@@ -654,7 +468,7 @@ async function fetchCart() {
 function getCartMoney(cart = state.cart) {
   const money = cart?.prices?.grand_total;
   if (!money || !Number.isFinite(Number(money.value)) || !money.currency) {
-    throw new Error("The authoritative cart total is unavailable.");
+    throw new Error(TEXT.cartTotalUnavailable);
   }
   return {
     amount: Math.round(Number(money.value) * 100),
@@ -664,12 +478,12 @@ function getCartMoney(cart = state.cart) {
 
 function formatMoney(money) {
   if (!money) {
-    return "—";
+    return EMPTY_DISPLAY;
   }
   try {
     return new Intl.NumberFormat(undefined, {
       currency: money.currency,
-      style: "currency",
+      style: NUMBER_FORMAT.STYLE_CURRENCY,
     }).format(Number(money.value));
   } catch {
     return `${money.value} ${money.currency}`;
@@ -718,27 +532,29 @@ function renderCartSummary() {
   setBadge(
     dom.cartStatus,
     cart?.id ? TEXT.cartLoaded : TEXT.noCart,
-    cart?.id ? "success" : ""
+    cart?.id ? BADGE_STATE.SUCCESS : ""
   );
   dom.summaryCustomer.textContent = isAuthenticated
     ? TEXT.customerRegistered
-    : `${TEXT.guest}${cart?.email ? ` (${cart.email})` : ""}`;
+    : cart?.email
+      ? TEXT.guestWithEmail(cart.email)
+      : TEXT.guest;
   dom.summaryTotal.textContent = formatMoney(cart?.prices?.grand_total);
   dom.summaryShippingAddress.textContent = shippingAddress
     ? [shippingAddress.street?.[0], shippingAddress.city]
         .filter(Boolean)
-        .join(", ") || TEXT.available
+        .join(SEPARATOR.COMMA) || TEXT.available
     : TEXT.missing;
   dom.summaryShippingMethod.textContent = shippingMethod
     ? [shippingMethod.carrier_title, shippingMethod.method_title]
         .filter(Boolean)
-        .join(" — ")
+        .join(SEPARATOR.EM_DASH)
     : TEXT.missing;
   dom.summaryStripe.textContent = getStripePaymentMethod(cart)
     ? TEXT.available
     : TEXT.notAvailable;
   dom.summaryCapture.textContent =
-    state.initParams?.elementsOptions?.captureMethod || "—";
+    state.initParams?.elementsOptions?.captureMethod || EMPTY_DISPLAY;
 }
 
 function hideOrderSuccess() {
@@ -749,7 +565,7 @@ function hideOrderSuccess() {
 
 function showOrderSuccess(order, paymentIntentStatus) {
   dom.orderSuccessTitle.textContent =
-    paymentIntentStatus === "requires_capture"
+    paymentIntentStatus === STRIPE_PAYMENT_STATUS.REQUIRES_CAPTURE
       ? TEXT.paymentAuthorized
       : TEXT.paymentSuccessful;
   dom.orderSuccessMessage.textContent = TEXT.orderConfirmed(order?.number);
@@ -758,7 +574,7 @@ function showOrderSuccess(order, paymentIntentStatus) {
 }
 
 async function refreshCart({ synchronizeElement = true } = {}) {
-  setBadge(dom.cartStatus, TEXT.loading, "loading");
+  setBadge(dom.cartStatus, TEXT.loading, BADGE_STATE.LOADING);
   const cart = await fetchCart();
   if (!cart) {
     throw new Error(TEXT.cartMissing);
@@ -769,7 +585,7 @@ async function refreshCart({ synchronizeElement = true } = {}) {
     ? discoverRuntimeConfig(cart)
     : null;
   renderCartSummary();
-  log("cart/refreshed", {
+  log(LOG.cartRefreshed, {
     cartId: cart.id,
     total: cart.prices?.grand_total,
   });
@@ -785,7 +601,7 @@ function getShippingMethods(cart = state.cart) {
 }
 
 function getShippingMethodRateId(method) {
-  return `${encodeURIComponent(method.carrier_code)}:${encodeURIComponent(method.method_code)}`;
+  return `${encodeURIComponent(method.carrier_code)}${SEPARATOR.COLON}${encodeURIComponent(method.method_code)}`;
 }
 
 function toStripeShippingRate(method) {
@@ -805,7 +621,7 @@ function toStripeShippingRate(method) {
   return {
     id,
     displayName:
-      [method.carrier_title, method.method_title].filter(Boolean).join(" — ") ||
+      [method.carrier_title, method.method_title].filter(Boolean).join(SEPARATOR.EM_DASH) ||
       method.method_code,
     amount: Math.round(Number(amount.value) * 100),
   };
@@ -861,7 +677,7 @@ function destroyExpressCheckout() {
     try {
       state.expressCheckoutElement.destroy();
     } catch (error) {
-      console.warn("Unable to destroy Express Checkout Element.", error);
+      console.warn(CONSOLE.destroyExpressCheckoutFailed, error);
     }
   }
   state.configurationKey = null;
@@ -879,10 +695,10 @@ function destroyExpressCheckout() {
 }
 
 function hideExpressCheckout(message = null) {
-  dom.expressCheckoutSection.classList.add("hidden");
-  dom.wallet.classList.remove("opacity-25");
+  dom.expressCheckoutSection.classList.add(CSS_CLASS.HIDDEN);
+  dom.wallet.classList.remove(CSS_CLASS.OPACITY_25);
   if (message) {
-    setBadge(dom.paymentStatus, message, "error");
+    setBadge(dom.paymentStatus, message, BADGE_STATE.ERROR);
   }
 }
 
@@ -890,14 +706,14 @@ function showExpressCheckout() {
   if (state.elementLoadFailed) {
     return;
   }
-  dom.expressCheckoutSection.classList.remove("hidden");
-  dom.wallet.classList.remove("opacity-25");
-  setBadge(dom.paymentStatus, TEXT.ready, "success");
+  dom.expressCheckoutSection.classList.remove(CSS_CLASS.HIDDEN);
+  dom.wallet.classList.remove(CSS_CLASS.OPACITY_25);
+  setBadge(dom.paymentStatus, TEXT.ready, BADGE_STATE.SUCCESS);
 }
 
 function setCheckoutBlocked(blocked) {
   dom.blocker.hidden = !blocked;
-  document.body.setAttribute("aria-busy", String(blocked));
+  document.body.setAttribute(ARIA.BUSY, String(blocked));
 }
 
 function handleModalDismissed() {
@@ -906,7 +722,7 @@ function handleModalDismissed() {
   if (!state.confirmationInProgress) {
     setCheckoutBlocked(false);
     if (wasOpen) {
-      log("wallet/dismissed");
+      log(LOG.walletDismissed);
     }
     synchronizeExpressCheckout();
   }
@@ -915,12 +731,12 @@ function handleModalDismissed() {
 function splitName(name) {
   const parts = String(name || "")
     .trim()
-    .split(/\s+/)
+    .split(WALLET_NAME_SPLIT_PATTERN)
     .filter(Boolean);
   if (parts.length < 2) {
-    throw new Error("The wallet must provide a first and last name.");
+    throw new Error(TEXT.walletNameRequired);
   }
-  return { firstname: parts.shift(), lastname: parts.join(" ") };
+  return { firstname: parts.shift(), lastname: parts.join(SEPARATOR.SPACE) };
 }
 
 function toCommerceAddress(walletAddress, phone) {
@@ -932,7 +748,7 @@ function toCommerceAddress(walletAddress, phone) {
     !address?.country ||
     !address?.postal_code
   ) {
-    throw new Error("The wallet address is incomplete.");
+    throw new Error(TEXT.walletAddressIncomplete);
   }
   return {
     ...name,
@@ -1003,14 +819,14 @@ async function handleShippingAddressChange(event) {
     }
     const shippingRates = setAvailableShippingMethods(methods);
     event.resolve({ shippingRates });
-    log("wallet/shipping-address-change", {
+    log(LOG.shippingAddressChange, {
       persisted: state.walletShippingAddressPersisted,
       shippingRates,
     });
   } catch (error) {
-    console.warn("Unable to process the wallet shipping address.", error);
+    console.warn(CONSOLE.processShippingAddressFailed, error);
     event.reject();
-    log("wallet/shipping-address-error", { message: error.message });
+    log(LOG.shippingAddressError, { message: error.message });
   }
 }
 
@@ -1031,7 +847,7 @@ async function handleShippingRateChange(event) {
       await refreshCart({ synchronizeElement: false });
       const money = getCartMoney();
       if (money.currency !== state.currentCurrency) {
-        throw new Error("The cart currency changed during wallet checkout.");
+        throw new Error(TEXT.cartCurrencyChanged);
       }
       if (money.amount !== state.currentAmount) {
         await state.elements.update({ amount: money.amount });
@@ -1040,14 +856,14 @@ async function handleShippingRateChange(event) {
     }
 
     event.resolve({ shippingRates: state.currentShippingRates });
-    log("wallet/shipping-rate-change", {
+    log(LOG.shippingRateChange, {
       carrierCode: method.carrier_code,
       methodCode: method.method_code,
     });
   } catch (error) {
-    console.warn("Unable to persist the wallet shipping method.", error);
+    console.warn(CONSOLE.persistShippingMethodFailed, error);
     event.reject();
-    log("wallet/shipping-rate-error", { message: error.message });
+    log(LOG.shippingRateError, { message: error.message });
   }
 }
 
@@ -1066,7 +882,7 @@ function toStripeBillingDetails(event) {
     return null;
   }
   return {
-    name: `${address.firstname || ""} ${address.lastname || ""}`.trim(),
+    name: TEXT.fullName(address.firstname, address.lastname),
     email: state.cart?.email || undefined,
     phone: address.telephone || undefined,
     address: {
@@ -1082,7 +898,7 @@ function toStripeBillingDetails(event) {
 
 function getCartCustomerName() {
   const address = state.cart?.billing_address || getShippingAddress();
-  return `${address?.firstname || ""} ${address?.lastname || ""}`.trim();
+  return TEXT.fullName(address?.firstname, address?.lastname);
 }
 
 async function synchronizeWalletDetails(event) {
@@ -1091,7 +907,7 @@ async function synchronizeWalletDetails(event) {
   if (!config.customerToken && !state.cart?.email) {
     const email = billingDetails?.email;
     if (!email) {
-      throw new Error("The wallet did not provide the required guest email.");
+      throw new Error(TEXT.guestEmailRequired);
     }
     await commerceGraphql(SET_GUEST_EMAIL, {
       cartId: state.cartId,
@@ -1131,14 +947,8 @@ async function synchronizeWalletDetails(event) {
 async function createPaymentIntent(confirmationTokenId) {
   const config = getConfig();
   const response = await fetch(state.runtimeConfig.createPaymentIntentUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Store: config.storeCode,
-      ...(config.customerToken
-        ? { Authorization: `Bearer ${config.customerToken}` }
-        : {}),
-    },
+    method: HTTP.METHOD_POST,
+    headers: getCommerceHeaders(),
     body: JSON.stringify({
       cartId: state.cartId,
       cartFullName: getCartCustomerName(),
@@ -1149,7 +959,7 @@ async function createPaymentIntent(confirmationTokenId) {
   const data = await response.json().catch(() => null);
   if (!response.ok || !data?.client_secret) {
     throw new Error(
-      data?.error || data?.message || "Unable to create the PaymentIntent."
+      data?.error || data?.message || TEXT.paymentIntentCreateFailed
     );
   }
   return data;
@@ -1161,11 +971,13 @@ async function persistPaymentMethod(clientSecret) {
       cartId: state.cartId,
       input: {
         code: STRIPE_PAYMENT_METHOD_CODE,
-        additional_data: [{ key: "client_secret", value: clientSecret }],
+        additional_data: [
+          { key: STRIPE.CLIENT_SECRET_KEY, value: clientSecret },
+        ],
       },
     });
   } catch (genericError) {
-    log("commerce/payment-method-generic-fallback", {
+    log(LOG.paymentMethodGenericFallback, {
       message: genericError.message,
     });
     await commerceGraphql(SET_PAAS_PAYMENT_METHOD, {
@@ -1175,7 +987,10 @@ async function persistPaymentMethod(clientSecret) {
   }
 }
 
-function notifyPaymentFailure(event, reason = "fail") {
+function notifyPaymentFailure(
+  event,
+  reason = STRIPE.PAYMENT_FAILED_REASON.FAIL
+) {
   if (typeof event.paymentFailed === "function") {
     event.paymentFailed({ reason });
   }
@@ -1185,10 +1000,10 @@ async function placeOrder() {
   const data = await commerceGraphql(PLACE_ORDER, { cartId: state.cartId });
   const result = data?.placeOrder;
   if (result?.errors?.length) {
-    throw new Error(result.errors.map((error) => error.message).join(" "));
+    throw new Error(result.errors.map((error) => error.message).join(SEPARATOR.SPACE));
   }
   if (!result?.orderV2) {
-    throw new Error("Commerce did not return the placed order.");
+    throw new Error(TEXT.orderMissing);
   }
   return result.orderV2;
 }
@@ -1197,8 +1012,8 @@ async function runConfirmation(event) {
   state.confirmationInProgress = true;
   state.modalOpen = true;
   setCheckoutBlocked(true);
-  setBadge(dom.paymentStatus, TEXT.loading, "loading");
-  log("payment/started", {
+  setBadge(dom.paymentStatus, TEXT.loading, BADGE_STATE.LOADING);
+  log(LOG.paymentStarted, {
     cartId: state.cartId,
     amount: state.currentAmount,
     currency: state.currentCurrency,
@@ -1215,15 +1030,21 @@ async function runConfirmation(event) {
         await state.elements.update({ amount: synchronizedMoney.amount });
         state.currentAmount = synchronizedMoney.amount;
       }
-      notifyPaymentFailure(event, "invalid_shipping_address");
-      setBadge(dom.paymentStatus, TEXT.ready, "success");
-      log("payment/reauthorization-required", synchronizedMoney);
+      notifyPaymentFailure(
+        event,
+        STRIPE.PAYMENT_FAILED_REASON.INVALID_SHIPPING_ADDRESS
+      );
+      setBadge(dom.paymentStatus, TEXT.ready, BADGE_STATE.SUCCESS);
+      log(LOG.reauthorizationRequired, synchronizedMoney);
       return false;
     }
 
     const submitResult = await state.elements.submit();
     if (submitResult?.error) {
-      notifyPaymentFailure(event, "invalid_payment_data");
+      notifyPaymentFailure(
+        event,
+        STRIPE.PAYMENT_FAILED_REASON.INVALID_PAYMENT_DATA
+      );
       throw submitResult.error;
     }
 
@@ -1249,20 +1070,23 @@ async function runConfirmation(event) {
       confirmationTokenResult.error ||
       !confirmationTokenResult.confirmationToken?.id
     ) {
-      notifyPaymentFailure(event, "invalid_payment_data");
+      notifyPaymentFailure(
+        event,
+        STRIPE.PAYMENT_FAILED_REASON.INVALID_PAYMENT_DATA
+      );
       throw (
         confirmationTokenResult.error ||
-        new Error("Stripe did not create a Confirmation Token.")
+        new Error(TEXT.confirmationTokenMissing)
       );
     }
 
     const confirmationTokenId = confirmationTokenResult.confirmationToken.id;
-    log("payment/confirmation-token-created", {
+    log(LOG.confirmationTokenCreated, {
       confirmationTokenId,
     });
 
     const paymentIntentData = await createPaymentIntent(confirmationTokenId);
-    log("payment/intent-created", {
+    log(LOG.intentCreated, {
       paymentIntentId: paymentIntentData.id,
       status: paymentIntentData.status,
       hasClientSecret: Boolean(paymentIntentData.client_secret),
@@ -1277,7 +1101,7 @@ async function runConfirmation(event) {
           ? { return_url: paymentIntentData.return_url }
           : {}),
       },
-      redirect: "if_required",
+      redirect: STRIPE.REDIRECT,
     });
     if (confirmationResult.error) {
       notifyPaymentFailure(event);
@@ -1290,12 +1114,12 @@ async function runConfirmation(event) {
     ) {
       notifyPaymentFailure(event);
       throw new Error(
-        `Unexpected PaymentIntent status: ${confirmationResult.paymentIntent.status}`
+        TEXT.unexpectedPaymentStatus(confirmationResult.paymentIntent.status)
       );
     }
 
     const paymentIntent = confirmationResult.paymentIntent;
-    log("payment/succeeded", {
+    log(LOG.paymentSucceeded, {
       paymentIntentId: paymentIntent?.id,
       status: paymentIntent?.status,
       amount: paymentIntent?.amount,
@@ -1305,16 +1129,16 @@ async function runConfirmation(event) {
     });
 
     const order = await placeOrder();
-    setBadge(dom.paymentStatus, TEXT.orderPlaced, "success");
+    setBadge(dom.paymentStatus, TEXT.orderPlaced, BADGE_STATE.SUCCESS);
     showOrderSuccess(order, paymentIntent?.status);
-    log("order/placed", {
+    log(LOG.orderPlaced, {
       orderNumber: order?.number,
       orderId: order?.id,
       paymentIntentId: paymentIntent?.id,
       paymentStatus: paymentIntent?.status,
     });
     notifySuccess(
-      paymentIntent?.status === "requires_capture"
+      paymentIntent?.status === STRIPE_PAYMENT_STATUS.REQUIRES_CAPTURE
         ? TEXT.paymentAuthorized
         : TEXT.paymentSuccessful
     );
@@ -1323,10 +1147,10 @@ async function runConfirmation(event) {
     destroyExpressCheckout();
     return true;
   } catch (error) {
-    console.warn("Standalone Express Checkout confirmation failed.", error);
+    console.warn(CONSOLE.confirmationFailed, error);
     notifyPaymentFailure(event);
-    setBadge(dom.paymentStatus, TEXT.paymentFailed, "error");
-    log("payment/failed", {
+    setBadge(dom.paymentStatus, TEXT.paymentFailed, BADGE_STATE.ERROR);
+    log(LOG.paymentFailed, {
       message: error?.message || TEXT.paymentFailed,
       name: error?.name,
       type: error?.type,
@@ -1353,34 +1177,31 @@ function handleConfirm(event) {
 }
 
 function registerExpressCheckoutHandlers() {
-  state.expressCheckoutElement.on("click", (event) => {
+  state.expressCheckoutElement.on(STRIPE.EVENT.CLICK, (event) => {
     state.modalOpen = true;
     setCheckoutBlocked(true);
-    log("wallet/clicked", {
+    log(LOG.walletClicked, {
       cartId: state.cartId,
       amount: state.currentAmount,
       currency: state.currentCurrency,
     });
     event.resolve({ shippingRates: state.currentShippingRates });
   });
-  state.expressCheckoutElement.on("confirm", handleConfirm);
+  state.expressCheckoutElement.on(STRIPE.EVENT.CONFIRM, handleConfirm);
   state.expressCheckoutElement.on(
-    "shippingaddresschange",
+    STRIPE.EVENT.SHIPPING_ADDRESS_CHANGE,
     handleShippingAddressChange
   );
   state.expressCheckoutElement.on(
-    "shippingratechange",
+    STRIPE.EVENT.SHIPPING_RATE_CHANGE,
     handleShippingRateChange
   );
-  state.expressCheckoutElement.on("cancel", handleModalDismissed);
-  state.expressCheckoutElement.on("escape", handleModalDismissed);
-  state.expressCheckoutElement.on("loaderror", (event) => {
-    console.warn(
-      "Stripe Express Checkout Element failed to load.",
-      event.error
-    );
+  state.expressCheckoutElement.on(STRIPE.EVENT.CANCEL, handleModalDismissed);
+  state.expressCheckoutElement.on(STRIPE.EVENT.ESCAPE, handleModalDismissed);
+  state.expressCheckoutElement.on(STRIPE.EVENT.LOAD_ERROR, (event) => {
+    console.warn(CONSOLE.expressCheckoutLoadFailed, event.error);
     state.elementLoadFailed = true;
-    log("wallet/loaderror", {
+    log(LOG.walletLoadError, {
       message: event.error?.message,
       type: event.error?.type,
       code: event.error?.code,
@@ -1388,28 +1209,31 @@ function registerExpressCheckoutHandlers() {
     handleModalDismissed();
     hideExpressCheckout();
   });
-  state.expressCheckoutElement.on("ready", (event) => {
+  state.expressCheckoutElement.on(STRIPE.EVENT.READY, (event) => {
     if (event.availablePaymentMethods) {
-      log("wallet/ready", {
+      log(LOG.walletReady, {
         availablePaymentMethods: event.availablePaymentMethods,
       });
       showExpressCheckout();
     } else {
-      log("wallet/unavailable", { reason: TEXT.walletUnavailable });
+      log(LOG.walletUnavailable, { reason: TEXT.walletUnavailable });
       hideExpressCheckout(TEXT.walletUnavailable);
     }
   });
-  state.expressCheckoutElement.on("availablepaymentmethodschange", (event) => {
-    if (event.paymentMethods) {
-      log("wallet/payment-methods-changed", {
-        paymentMethods: event.paymentMethods,
-      });
-      showExpressCheckout();
-    } else {
-      log("wallet/unavailable", { reason: TEXT.walletUnavailable });
-      hideExpressCheckout(TEXT.walletUnavailable);
+  state.expressCheckoutElement.on(
+    STRIPE.EVENT.AVAILABLE_PAYMENT_METHODS_CHANGE,
+    (event) => {
+      if (event.paymentMethods) {
+        log(LOG.walletPaymentMethodsChanged, {
+          paymentMethods: event.paymentMethods,
+        });
+        showExpressCheckout();
+      } else {
+        log(LOG.walletUnavailable, { reason: TEXT.walletUnavailable });
+        hideExpressCheckout(TEXT.walletUnavailable);
+      }
     }
-  });
+  );
 }
 
 async function mountExpressCheckout() {
@@ -1419,9 +1243,9 @@ async function mountExpressCheckout() {
   }
 
   destroyExpressCheckout();
-  dom.wallet.classList.add("opacity-25");
-  dom.expressCheckoutSection.classList.remove("hidden");
-  setBadge(dom.paymentStatus, TEXT.loading, "loading");
+  dom.wallet.classList.add(CSS_CLASS.OPACITY_25);
+  dom.expressCheckoutSection.classList.remove(CSS_CLASS.HIDDEN);
+  setBadge(dom.paymentStatus, TEXT.loading, BADGE_STATE.LOADING);
 
   try {
     state.runtimeConfig = discoverRuntimeConfig();
@@ -1436,7 +1260,7 @@ async function mountExpressCheckout() {
 
     const money = getCartMoney();
     const elementsOptions = {
-      mode: "payment",
+      mode: STRIPE.ELEMENTS_MODE,
       amount: money.amount,
       currency: money.currency,
       ...(state.initParams.elementsOptions?.captureMethod
@@ -1455,18 +1279,18 @@ async function mountExpressCheckout() {
     state.currentCurrency = money.currency;
     state.elements = state.stripe.elements(elementsOptions);
     state.expressCheckoutElement = state.elements.create(
-      "expressCheckout",
+      STRIPE.ELEMENT_TYPE,
       getExpressCheckoutOptions()
     );
     registerExpressCheckoutHandlers();
-    state.expressCheckoutElement.mount("#express-checkout-element");
+    state.expressCheckoutElement.mount(SELECTOR.wallet);
     state.configurationKey = getConfigurationKey();
     renderCartSummary();
-    log("stripe/mounted", elementsOptions);
+    log(LOG.stripeMounted, elementsOptions);
   } catch (error) {
     console.warn(TEXT.initializationFailed, error);
     hideExpressCheckout(TEXT.initializationFailed);
-    log("stripe/initialization-error", { message: error.message });
+    log(LOG.stripeInitializationError, { message: error.message });
   }
 }
 
@@ -1499,7 +1323,7 @@ async function synchronizeExpressCheckout() {
 
 async function handleConnect(event) {
   event.preventDefault();
-  setBadge(dom.connectionStatus, TEXT.connecting, "loading");
+  setBadge(dom.connectionStatus, TEXT.connecting, BADGE_STATE.LOADING);
   try {
     const config = getConfig();
     if (
@@ -1509,28 +1333,26 @@ async function handleConnect(event) {
       const hadCart = Boolean(state.cartId || state.cart);
       clearCartSession();
       if (hadCart) {
-        notifyWarning(
-          "Adobe Commerce URL changed. Previous cart was cleared before connecting."
-        );
+        notifyWarning(TEXT.commerceUrlChangedBeforeConnect);
       }
     }
     savePublicConfiguration(config);
     setConnected(true, config.commerceUrl);
-    setBadge(dom.connectionStatus, TEXT.connected, "success");
+    setBadge(dom.connectionStatus, TEXT.connected, BADGE_STATE.SUCCESS);
     if (dom.cartId.value.trim() || config.customerToken) {
       await refreshCart();
     }
-    log("configuration/connected", {
+    log(LOG.configurationConnected, {
       commerceUrl: config.commerceUrl,
       authenticated: Boolean(config.customerToken),
       storeCode: config.storeCode,
     });
-    notifySuccess("Storefront connected.");
+    notifySuccess(TEXT.storefrontConnected);
   } catch (error) {
     setConnected(false);
-    setBadge(dom.connectionStatus, error.message, "error");
-    log("configuration/error", { message: error.message });
-    notifyError(error.message || "Unable to connect.");
+    setBadge(dom.connectionStatus, error.message, BADGE_STATE.ERROR);
+    log(LOG.configurationError, { message: error.message });
+    notifyError(error.message || TEXT.connectFailed);
   }
 }
 
@@ -1543,15 +1365,15 @@ async function handleCreateCart() {
   dom.createCartButton.disabled = true;
   try {
     await createOrLoadCart();
-    log("cart/ready", {
+    log(LOG.cartReady, {
       cartId: state.cartId,
       total: state.cart?.prices?.grand_total,
     });
-    notifySuccess(state.cartId ? `Cart ready: ${state.cartId}` : "Cart ready.");
+    notifySuccess(TEXT.cartReady(state.cartId));
   } catch (error) {
-    setBadge(dom.cartStatus, error.message, "error");
-    log("cart/create-error", { message: error.message });
-    notifyError(error.message || "Unable to create or load cart.");
+    setBadge(dom.cartStatus, error.message, BADGE_STATE.ERROR);
+    log(LOG.cartCreateError, { message: error.message });
+    notifyError(error.message || TEXT.createCartFailed);
   } finally {
     syncCreateCartAvailability();
   }
@@ -1564,7 +1386,7 @@ async function handleAddProduct(event) {
     return;
   }
   if (!hasProductSku()) {
-    notifyError("Enter a product SKU.");
+    notifyError(TEXT.productSkuRequired);
     return;
   }
 
@@ -1575,7 +1397,7 @@ async function handleAddProduct(event) {
     const sku = dom.productSku.value.trim();
     const quantity = Number(dom.productQuantity.value);
     if (!sku || !Number.isFinite(quantity) || quantity <= 0) {
-      throw new Error("Enter a product SKU and positive quantity.");
+      throw new Error(TEXT.productSkuAndQuantityRequired);
     }
     const data = await commerceGraphql(ADD_PRODUCT, {
       cartId: state.cartId,
@@ -1584,30 +1406,36 @@ async function handleAddProduct(event) {
     });
     const userErrors = data?.addProductsToCart?.user_errors || [];
     if (userErrors.length) {
-      throw new Error(userErrors.map((error) => error.message).join(" "));
+      throw new Error(userErrors.map((error) => error.message).join(SEPARATOR.SPACE));
     }
     await refreshCart();
-    setBadge(dom.cartStatus, TEXT.addedProduct, "success");
-    log("cart/product-added", {
+    setBadge(dom.cartStatus, TEXT.addedProduct, BADGE_STATE.SUCCESS);
+    log(LOG.cartProductAdded, {
       cartId: state.cartId,
       sku,
       quantity,
       total: state.cart?.prices?.grand_total,
     });
-    notifySuccess(`Added ${quantity} × ${sku}.`);
+    notifySuccess(TEXT.addedSku(quantity, sku));
   } catch (error) {
-    setBadge(dom.cartStatus, error.message, "error");
-    log("cart/add-product-error", { message: error.message });
-    notifyError(error.message || "Unable to add product.");
+    setBadge(dom.cartStatus, error.message, BADGE_STATE.ERROR);
+    log(LOG.cartAddProductError, { message: error.message });
+    notifyError(error.message || TEXT.addProductFailed);
   } finally {
     syncCartActionAvailability();
   }
 }
 
-function clearLocalSession({
-  notifyMessage = "Local session cleared.",
-} = {}) {
-  if (!hasLocalSession() && dom.orderSuccess.hidden) {
+/**
+ * Reset connected state, cart session, form fields, and the checkout log.
+ *
+ * @param {{ notifyMessage?: string, force?: boolean }} [options]
+ */
+const clearLocalSession = ({
+  notifyMessage = TEXT.localSessionCleared,
+  force = false,
+} = {}) => {
+  if (!force && !hasLocalSession() && dom.orderSuccess.hidden) {
     return;
   }
 
@@ -1617,47 +1445,66 @@ function clearLocalSession({
   dom.commerceUrl.value = "";
   dom.runtimeBaseUrl.value = "";
   dom.customerToken.value = "";
-  dom.storeCode.value = "default";
+  dom.storeCode.value = DEFAULT_STORE_CODE;
   dom.productSku.value = "";
-  dom.productQuantity.value = "1";
+  dom.productQuantity.value = DEFAULT_PRODUCT_QUANTITY;
   dom.environmentPreset.value = "";
   dom.log.textContent = "";
   syncLogActionsAvailability();
   syncStorageActionAvailability();
   setBadge(dom.connectionStatus, TEXT.notConnected);
   notifySuccess(notifyMessage);
-}
+};
 
-dom.configurationForm.addEventListener("submit", handleConnect);
-dom.environmentPreset.addEventListener("change", (event) => {
+/**
+ * Clear every localStorage key, then reset the in-memory session so the UI
+ * cannot keep a connection whose persisted config no longer exists.
+ */
+const handlePurgeLocalStorage = () => {
+  if (!hasLocalStorageData()) {
+    return;
+  }
+
+  const keys = Object.keys(window.localStorage);
+  window.localStorage.clear();
+  clearLocalSession({
+    notifyMessage: TEXT.purgedStorage(keys.length),
+    force: true,
+  });
+};
+
+dom.configurationForm.addEventListener(DOM_EVENT.SUBMIT, handleConnect);
+dom.environmentPreset.addEventListener(DOM_EVENT.CHANGE, (event) => {
   const presetKey = event.target.value;
   if (!presetKey) {
     return;
   }
   applyEnvironmentPreset(presetKey);
 });
-dom.commerceUrl.addEventListener("change", () => {
+dom.commerceUrl.addEventListener(DOM_EVENT.CHANGE, () => {
   handleCommerceUrlChange();
   syncEnvironmentPresetSelection();
 });
-dom.runtimeBaseUrl.addEventListener("change", syncEnvironmentPresetSelection);
-dom.createCartButton.addEventListener("click", handleCreateCart);
-dom.cartForm.addEventListener("submit", handleAddProduct);
-dom.cartId.addEventListener("input", syncCartActionAvailability);
-dom.productSku.addEventListener("input", syncCartActionAvailability);
-dom.clearSessionButton.addEventListener("click", clearLocalSession);
-dom.startOverButton.addEventListener("click", () => {
-  clearLocalSession({ notifyMessage: "Storefront reset. Connect again to start over." });
-  window.scrollTo({ top: 0, behavior: "smooth" });
+dom.runtimeBaseUrl.addEventListener(DOM_EVENT.CHANGE, syncEnvironmentPresetSelection);
+dom.createCartButton.addEventListener(DOM_EVENT.CLICK, handleCreateCart);
+dom.cartForm.addEventListener(DOM_EVENT.SUBMIT, handleAddProduct);
+dom.cartId.addEventListener(DOM_EVENT.INPUT, syncCartActionAvailability);
+dom.productSku.addEventListener(DOM_EVENT.INPUT, syncCartActionAvailability);
+dom.clearSessionButton.addEventListener(DOM_EVENT.CLICK, clearLocalSession);
+dom.purgeLocalStorageButton?.addEventListener(
+  DOM_EVENT.CLICK,
+  handlePurgeLocalStorage
+);
+dom.startOverButton.addEventListener(DOM_EVENT.CLICK, () => {
+  clearLocalSession({ notifyMessage: TEXT.storefrontReset });
+  window.scrollTo(WINDOW_SCROLL_TOP);
 });
-dom.clearLogButton.addEventListener("click", () => {
+dom.clearLogButton.addEventListener(DOM_EVENT.CLICK, () => {
   dom.log.textContent = "";
   syncLogActionsAvailability();
   syncStorageActionAvailability();
-  notifySuccess("Checkout log cleared.");
+  notifySuccess(TEXT.checkoutLogCleared);
 });
-
-window.addEventListener("storefront:storage-changed", syncStorageActionAvailability);
 
 [
   dom.commerceUrl,
@@ -1665,8 +1512,8 @@ window.addEventListener("storefront:storage-changed", syncStorageActionAvailabil
   dom.customerToken,
   dom.storeCode,
 ].forEach((input) => {
-  input.addEventListener("input", syncStorageActionAvailability);
-  input.addEventListener("change", syncStorageActionAvailability);
+  input.addEventListener(DOM_EVENT.INPUT, syncStorageActionAvailability);
+  input.addEventListener(DOM_EVENT.CHANGE, syncStorageActionAvailability);
 });
 
 async function copyTextToClipboard(text) {
@@ -1675,35 +1522,35 @@ async function copyTextToClipboard(text) {
     return;
   }
 
-  const textarea = document.createElement("textarea");
+  const textarea = document.createElement(HTML_ELEMENT.TEXTAREA);
   textarea.value = text;
-  textarea.setAttribute("readonly", "");
-  textarea.style.position = "fixed";
-  textarea.style.left = "-9999px";
+  textarea.setAttribute(CLIPBOARD.READONLY, "");
+  textarea.style.position = CLIPBOARD.POSITION;
+  textarea.style.left = CLIPBOARD.LEFT;
   document.body.appendChild(textarea);
   textarea.select();
 
   try {
-    if (!document.execCommand("copy")) {
-      throw new Error("Copy command failed.");
+    if (!document.execCommand(CLIPBOARD.EXEC_COMMAND)) {
+      throw new Error(TEXT.copyCommandFailed);
     }
   } finally {
     textarea.remove();
   }
 }
 
-dom.copyLogButton.addEventListener("click", async () => {
+dom.copyLogButton.addEventListener(DOM_EVENT.CLICK, async () => {
   const text = dom.log.textContent || "";
   if (!text.trim()) {
-    notifyError("Checkout log is empty.");
+    notifyError(TEXT.checkoutLogEmpty);
     return;
   }
 
   try {
     await copyTextToClipboard(text);
-    notifySuccess("Checkout log copied.");
+    notifySuccess(TEXT.checkoutLogCopied);
   } catch {
-    notifyError("Unable to copy the checkout log.");
+    notifyError(TEXT.copyLogFailed);
   }
 });
 

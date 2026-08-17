@@ -15,9 +15,6 @@
     "lint:fix": "eslint . --fix",
     "commit": "sh scripts/commit.sh"
   },
-  "dependencies": {
-    "ramda": "^0.32.0"
-  },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@tailwindcss/vite": "^4.3.3",
