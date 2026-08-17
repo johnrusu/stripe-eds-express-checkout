@@ -663,6 +663,14 @@ function getConfigurationKey() {
   });
 }
 
+/**
+ * Load Stripe.js init payload from App Builder `GET {base}/init-params`.
+ * Requires `publishableKey`. Optional `options`, `appInfo`, and
+ * `elementsOptions` are applied when mounting deferred ECE (mode payment).
+ * A Payment Element `clientSecret` from this payload is not used.
+ *
+ * @returns {Promise<{ publishableKey: string, options?: object, appInfo?: object, elementsOptions?: object }>}
+ */
 async function fetchInitParams() {
   const response = await fetch(state.runtimeConfig.getInitParamsUrl);
   const data = await response.json().catch(() => null);
@@ -944,6 +952,15 @@ async function synchronizeWalletDetails(event) {
   return refreshCart({ synchronizeElement: false });
 }
 
+/**
+ * Create a PaymentIntent through App Builder `POST {base}/payment-intent`.
+ * Sends `confirmationTokenId` (Confirmation Token). Expects `client_secret`.
+ * App Builder creates an unconfirmed PaymentIntent from the cart; it does not
+ * confirm with the token. This client confirms via `confirmPayment`.
+ *
+ * @param {string} confirmationTokenId
+ * @returns {Promise<{ client_secret: string, id?: string, status?: string, return_url?: string }>}
+ */
 async function createPaymentIntent(confirmationTokenId) {
   const config = getConfig();
   const response = await fetch(state.runtimeConfig.createPaymentIntentUrl, {
