@@ -255,6 +255,7 @@ export const CONSOLE = Object.freeze({
   processShippingAddressFailed:
     "Unable to process the wallet shipping address.",
   persistShippingMethodFailed: "Unable to persist the wallet shipping method.",
+  previewWalletAmountFailed: "Unable to preview the wallet shipping amount.",
   confirmationFailed: "Standalone Express Checkout confirmation failed.",
   expressCheckoutLoadFailed: "Stripe Express Checkout Element failed to load.",
 });

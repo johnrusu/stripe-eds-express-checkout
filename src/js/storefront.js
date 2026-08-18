@@ -109,6 +109,7 @@ const state = {
   runtimeConfig: null,
   shippingMethodsByRateId: new Map(),
   stripe: null,
+  walletReauthorizationRequired: false,
   walletShippingAddressPersisted: false,
 };
 
@@ -650,6 +651,37 @@ function setAvailableShippingMethods(methods = []) {
   return state.currentShippingRates;
 }
 
+function getSelectedShippingAmountCents(cart = state.cart) {
+  const method = getSelectedShippingMethod(cart);
+  if (!method) {
+    return 0;
+  }
+  const amount =
+    method.amount || method.price_incl_tax || method.price_excl_tax;
+  const value = Number(amount?.value);
+  return Number.isFinite(value) ? Math.round(value * 100) : 0;
+}
+
+function getAmountWithShippingRate(shippingRate) {
+  const money = getCartMoney();
+  const rateAmount = Number(shippingRate?.amount);
+  const shippingCents = Number.isFinite(rateAmount) ? rateAmount : 0;
+  return money.amount - getSelectedShippingAmountCents() + shippingCents;
+}
+
+async function previewWalletAmount(shippingRate) {
+  if (!state.elements || !shippingRate) {
+    return state.currentAmount;
+  }
+  const previewAmount = getAmountWithShippingRate(shippingRate);
+  if (previewAmount === state.currentAmount) {
+    return previewAmount;
+  }
+  await state.elements.update({ amount: previewAmount });
+  state.currentAmount = previewAmount;
+  return previewAmount;
+}
+
 function getExpressCheckoutOptions() {
   const collectShipping = shouldCollectShipping();
   const options = {
@@ -714,6 +746,7 @@ function destroyExpressCheckout() {
   state.pendingShippingMethod = null;
   state.shippingMethodsByRateId = new Map();
   state.stripe = null;
+  state.walletReauthorizationRequired = false;
   state.walletShippingAddressPersisted = false;
 }
 
@@ -939,10 +972,14 @@ async function handleShippingAddressChange(event) {
       methods = await estimateShippingMethods(estimateAddress);
     }
     const shippingRates = setAvailableShippingMethods(methods);
+    if (shippingRates[0] && !state.walletShippingAddressPersisted) {
+      await previewWalletAmount(shippingRates[0]);
+    }
     event.resolve({ shippingRates });
     log(LOG.shippingAddressChange, {
       persisted: state.walletShippingAddressPersisted,
       shippingRates,
+      amount: state.currentAmount,
     });
   } catch (error) {
     console.warn(CONSOLE.processShippingAddressFailed, error);
@@ -974,12 +1011,15 @@ async function handleShippingRateChange(event) {
         await state.elements.update({ amount: money.amount });
         state.currentAmount = money.amount;
       }
+    } else {
+      await previewWalletAmount(event.shippingRate);
     }
 
     event.resolve({ shippingRates: state.currentShippingRates });
     log(LOG.shippingRateChange, {
       carrierCode: method.carrier_code,
       methodCode: method.method_code,
+      amount: state.currentAmount,
     });
   } catch (error) {
     console.warn(CONSOLE.persistShippingMethodFailed, error);
@@ -1164,6 +1204,7 @@ async function syncAmountAfterWalletUpdate(event) {
       await state.elements.update({ amount: synchronizedMoney.amount });
       state.currentAmount = synchronizedMoney.amount;
     }
+    state.walletReauthorizationRequired = true;
     notifyPaymentFailure(
       event,
       STRIPE.PAYMENT_FAILED_REASON.INVALID_SHIPPING_ADDRESS
@@ -1202,6 +1243,18 @@ async function runConfirmation(event) {
   });
 
   try {
+    if (state.walletReauthorizationRequired) {
+      notifyPaymentFailure(
+        event,
+        STRIPE.PAYMENT_FAILED_REASON.INVALID_SHIPPING_ADDRESS
+      );
+      log(LOG.reauthorizationRequired, {
+        amount: state.currentAmount,
+        currency: state.currentCurrency,
+      });
+      return false;
+    }
+
     await synchronizeWalletDetails(event);
     if (!(await syncAmountAfterWalletUpdate(event))) {
       return false;
@@ -1378,14 +1431,28 @@ function handleConfirm(event) {
 function registerExpressCheckoutHandlers() {
   state.expressCheckoutElement.on(STRIPE.EVENT.CLICK, (event) => {
     state.modalOpen = true;
+    state.walletReauthorizationRequired = false;
     setCheckoutBlocked(true);
-    log(LOG.walletClicked, {
-      cartId: state.cartId,
-      amount: state.currentAmount,
-      currency: state.currentCurrency,
-      expressPaymentType: event.expressPaymentType,
-    });
-    event.resolve({ shippingRates: state.currentShippingRates });
+    const rates = state.currentShippingRates;
+    const resolveClick = () => {
+      log(LOG.walletClicked, {
+        cartId: state.cartId,
+        amount: state.currentAmount,
+        currency: state.currentCurrency,
+        expressPaymentType: event.expressPaymentType,
+      });
+      event.resolve({ shippingRates: rates });
+    };
+    if (!shouldCollectShipping() || !rates[0]) {
+      resolveClick();
+      return;
+    }
+    previewWalletAmount(rates[0])
+      .then(resolveClick)
+      .catch((error) => {
+        console.warn(CONSOLE.previewWalletAmountFailed, error);
+        resolveClick();
+      });
   });
   state.expressCheckoutElement.on(STRIPE.EVENT.CONFIRM, handleConfirm);
   state.expressCheckoutElement.on(
