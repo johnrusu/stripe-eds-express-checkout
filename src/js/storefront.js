@@ -61,7 +61,9 @@ const dom = {
   createCartButton: document.querySelector(SELECTOR.createCartButton),
   customerToken: document.querySelector(SELECTOR.customerToken),
   environmentPreset: document.querySelector(SELECTOR.environmentPreset),
-  expressCheckoutSection: document.querySelector(SELECTOR.expressCheckoutSection),
+  expressCheckoutSection: document.querySelector(
+    SELECTOR.expressCheckoutSection
+  ),
   log: document.querySelector(SELECTOR.log),
   paymentContent: document.querySelector(SELECTOR.paymentContent),
   paymentStatus: document.querySelector(SELECTOR.paymentStatus),
@@ -75,7 +77,9 @@ const dom = {
   storeCode: document.querySelector(SELECTOR.storeCode),
   summaryCapture: document.querySelector(SELECTOR.summaryCapture),
   summaryCustomer: document.querySelector(SELECTOR.summaryCustomer),
-  summaryShippingAddress: document.querySelector(SELECTOR.summaryShippingAddress),
+  summaryShippingAddress: document.querySelector(
+    SELECTOR.summaryShippingAddress
+  ),
   summaryShippingMethod: document.querySelector(SELECTOR.summaryShippingMethod),
   summaryStripe: document.querySelector(SELECTOR.summaryStripe),
   summaryTotal: document.querySelector(SELECTOR.summaryTotal),
@@ -159,6 +163,7 @@ function getConfig() {
     customerToken: dom.customerToken.value.trim(),
     runtimeBaseUrl: normalizeBaseUrl(dom.runtimeBaseUrl.value),
     storeCode: dom.storeCode.value.trim() || DEFAULT_STORE_CODE,
+    productSku: dom.productSku.value.trim(),
   };
 }
 
@@ -166,6 +171,7 @@ function savePublicConfiguration(config) {
   window.localStorage.setItem(
     CONFIG_STORAGE_KEY,
     JSON.stringify({
+      productSku: config.productSku || dom.productSku.value.trim(),
       commerceUrl: config.commerceUrl,
       runtimeBaseUrl: config.runtimeBaseUrl,
       storeCode: config.storeCode,
@@ -175,6 +181,14 @@ function savePublicConfiguration(config) {
   syncStorageActionAvailability();
 }
 
+const persistPublicConfiguration = () => {
+  try {
+    savePublicConfiguration(getConfig());
+  } catch {
+    return;
+  }
+};
+
 function restoreConfiguration() {
   window.localStorage.removeItem(LEGACY_CONFIGURATION_STORAGE_KEY);
 
@@ -183,6 +197,7 @@ function restoreConfiguration() {
       window.localStorage.getItem(CONFIG_STORAGE_KEY) || JSON_NULL
     );
     if (config) {
+      dom.productSku.value = config.productSku || "";
       dom.commerceUrl.value = config.commerceUrl || "";
       dom.runtimeBaseUrl.value = config.runtimeBaseUrl || "";
       dom.storeCode.value = config.storeCode || DEFAULT_STORE_CODE;
@@ -193,10 +208,7 @@ function restoreConfiguration() {
       }
     }
   } catch (error) {
-    console.warn(
-      CONSOLE.restoreConfigurationFailed,
-      error
-    );
+    console.warn(CONSOLE.restoreConfigurationFailed, error);
   }
 
   const cartId = window.sessionStorage.getItem(CART_STORAGE_KEY);
@@ -226,6 +238,7 @@ function applyEnvironmentPreset(presetKey, { notify = true } = {}) {
     handleCommerceUrlChange();
   }
 
+  persistPublicConfiguration();
   syncStorageActionAvailability();
   syncCartActionAvailability();
   log(LOG.environmentPreset, {
@@ -314,17 +327,18 @@ function syncCreateCartAvailability() {
 
 function hasLocalSession() {
   return Boolean(
+    dom.productSku.value.trim() ||
     window.localStorage.getItem(CONFIG_STORAGE_KEY) ||
-      window.sessionStorage.getItem(CART_STORAGE_KEY) ||
-      state.connected ||
-      state.cart ||
-      hasCartId() ||
-      dom.commerceUrl.value.trim() ||
-      dom.runtimeBaseUrl.value.trim() ||
-      dom.customerToken.value.trim() ||
-      (dom.storeCode.value.trim() &&
-        dom.storeCode.value.trim() !== DEFAULT_STORE_CODE) ||
-      hasLogContent()
+    window.sessionStorage.getItem(CART_STORAGE_KEY) ||
+    state.connected ||
+    state.cart ||
+    hasCartId() ||
+    dom.commerceUrl.value.trim() ||
+    dom.runtimeBaseUrl.value.trim() ||
+    dom.customerToken.value.trim() ||
+    (dom.storeCode.value.trim() &&
+      dom.storeCode.value.trim() !== DEFAULT_STORE_CODE) ||
+    hasLogContent()
   );
 }
 
@@ -621,8 +635,9 @@ function toStripeShippingRate(method) {
   return {
     id,
     displayName:
-      [method.carrier_title, method.method_title].filter(Boolean).join(SEPARATOR.EM_DASH) ||
-      method.method_code,
+      [method.carrier_title, method.method_title]
+        .filter(Boolean)
+        .join(SEPARATOR.EM_DASH) || method.method_code,
     amount: Math.round(Number(amount.value) * 100),
   };
 }
@@ -747,17 +762,118 @@ function splitName(name) {
   return { firstname: parts.shift(), lastname: parts.join(SEPARATOR.SPACE) };
 }
 
-function toCommerceAddress(walletAddress, phone) {
-  const name = splitName(walletAddress?.name);
-  const address = walletAddress?.address;
+const readWalletValue = (...values) => {
+  for (const value of values) {
+    const normalized = String(value || "").trim();
+    if (normalized) {
+      return normalized;
+    }
+  }
+  return "";
+};
+
+/**
+ * Normalize ECE / Amazon Pay address payloads onto Stripe's `{ name, address }` shape.
+ * Confirm events nest `address`; some wallets flatten fields or use Amazon keys.
+ * Amazon Pay DE billing often leaves `line1` empty and puts the street in `line2`.
+ *
+ * @param {object | null | undefined} source
+ * @returns {{ name: string, phone?: string, address: object } | null}
+ */
+function toWalletAddress(source) {
+  if (!source) {
+    return null;
+  }
+  const nested =
+    source.address && typeof source.address === "object"
+      ? source.address
+      : null;
+  const streetLine1 = readWalletValue(
+    nested?.line1,
+    nested?.addressLine1,
+    source.line1,
+    source.addressLine1
+  );
+  const streetLine2 = readWalletValue(
+    nested?.line2,
+    nested?.addressLine2,
+    source.line2,
+    source.addressLine2
+  );
+  const address = {
+    line1: streetLine1 || streetLine2,
+    line2: streetLine1 ? streetLine2 || undefined : undefined,
+    city: readWalletValue(nested?.city, source.city),
+    state:
+      readWalletValue(
+        nested?.state,
+        nested?.stateOrRegion,
+        source.state,
+        source.stateOrRegion
+      ) || undefined,
+    country: readWalletValue(
+      nested?.country,
+      nested?.countryCode,
+      source.country,
+      source.countryCode
+    ),
+    postal_code: readWalletValue(
+      nested?.postal_code,
+      nested?.postalCode,
+      source.postal_code,
+      source.postalCode
+    ),
+  };
+  const name = readWalletValue(source.name, nested?.name);
+  const phone =
+    readWalletValue(
+      source.phone,
+      source.phoneNumber,
+      nested?.phone,
+      nested?.phoneNumber
+    ) || undefined;
   if (
-    !address?.line1 ||
-    !address?.city ||
-    !address?.country ||
-    !address?.postal_code
+    !name &&
+    !address.line1 &&
+    !address.city &&
+    !address.country &&
+    !address.postal_code
   ) {
+    return null;
+  }
+  return { name, phone, address };
+}
+
+function isCompleteWalletAddress(walletAddress) {
+  const address = walletAddress?.address;
+  return Boolean(
+    walletAddress?.name &&
+    address?.line1 &&
+    address?.city &&
+    address?.country &&
+    address?.postal_code
+  );
+}
+
+const firstCompleteWallet = (...wallets) =>
+  wallets.find((wallet) => isCompleteWalletAddress(wallet)) || null;
+
+function cartNeedsWalletAddresses() {
+  return (
+    (shouldCollectShipping() &&
+      !isCompleteCommerceAddress(getShippingAddress())) ||
+    !isCompleteBillingAddress()
+  );
+}
+
+function toCommerceAddress(walletAddress, phone) {
+  const normalized = toWalletAddress(walletAddress);
+  if (!isCompleteWalletAddress(normalized)) {
     throw new Error(TEXT.walletAddressIncomplete);
   }
+  const name = splitName(normalized.name);
+  const address = normalized.address;
+  const telephone = phone || normalized.phone;
   return {
     ...name,
     street: [address.line1, address.line2].filter(Boolean),
@@ -765,7 +881,7 @@ function toCommerceAddress(walletAddress, phone) {
     country_code: address.country,
     postcode: address.postal_code,
     ...(address.state ? { region: address.state } : {}),
-    ...(phone ? { telephone: phone } : {}),
+    ...(telephone ? { telephone } : {}),
   };
 }
 
@@ -806,24 +922,21 @@ async function setShippingMethod(method) {
 async function handleShippingAddressChange(event) {
   try {
     let methods = [];
-    const fullWalletAddress = { address: event.address, name: event.name };
-    if (
-      event.name &&
-      event.address?.line1 &&
-      event.address?.city &&
-      event.address?.country &&
-      event.address?.postal_code
-    ) {
-      await setShippingAddress(
-        fullWalletAddress,
-        event.phone || event.phoneNumber
-      );
+    const walletAddress = toWalletAddress({
+      name: event.name,
+      address: event.address,
+      phone: event.phone || event.phoneNumber,
+    });
+    if (isCompleteWalletAddress(walletAddress)) {
+      await setShippingAddress(walletAddress, walletAddress.phone);
       await refreshCart({ synchronizeElement: false });
       methods = getShippingMethods();
     }
 
-    if (methods.length === 0) {
-      methods = await estimateShippingMethods(event.address);
+    if (methods.length === 0 && event.address) {
+      const estimateAddress =
+        toWalletAddress({ address: event.address })?.address || event.address;
+      methods = await estimateShippingMethods(estimateAddress);
     }
     const shippingRates = setAvailableShippingMethods(methods);
     event.resolve({ shippingRates });
@@ -877,11 +990,14 @@ async function handleShippingRateChange(event) {
 
 function toStripeBillingDetails(event) {
   if (event.billingDetails) {
+    const billingWallet = toWalletAddress(event.billingDetails);
     return {
       name: event.billingDetails.name,
       email: event.billingDetails.email || state.cart?.email,
       phone: event.billingDetails.phone,
-      address: event.billingDetails.address,
+      ...(isCompleteWalletAddress(billingWallet)
+        ? { address: billingWallet.address }
+        : {}),
     };
   }
 
@@ -909,7 +1025,16 @@ function getCartCustomerName() {
   return TEXT.fullName(address?.firstname, address?.lastname);
 }
 
-async function synchronizeWalletDetails(event) {
+async function persistBillingAddress(walletAddress, phone) {
+  await commerceGraphql(SET_BILLING_ADDRESS, {
+    cartId: state.cartId,
+    billingAddress: {
+      address: toCommerceAddress(walletAddress, phone),
+    },
+  });
+}
+
+async function synchronizeWalletDetails(event, extraWallets = {}) {
   const config = getConfig();
   const billingDetails = event.billingDetails;
   if (!config.customerToken && !state.cart?.email) {
@@ -923,30 +1048,46 @@ async function synchronizeWalletDetails(event) {
     });
   }
 
-  if (event.shippingAddress) {
-    await setShippingAddress(event.shippingAddress, billingDetails?.phone);
+  const shippingWallet = firstCompleteWallet(
+    extraWallets.shipping,
+    toWalletAddress(event.shippingAddress),
+    toWalletAddress(billingDetails)
+  );
+  const billingWallet = firstCompleteWallet(
+    extraWallets.billing,
+    toWalletAddress(billingDetails),
+    shippingWallet
+  );
+  const phone =
+    billingDetails?.phone || shippingWallet?.phone || billingWallet?.phone;
+
+  if (isCompleteWalletAddress(shippingWallet)) {
+    await setShippingAddress(shippingWallet, phone);
   }
 
   const selectedMethod =
     state.shippingMethodsByRateId.get(event.shippingRate?.id) ||
     state.pendingShippingMethod;
-  if (selectedMethod) {
+  if (
+    selectedMethod &&
+    (state.walletShippingAddressPersisted ||
+      isCompleteCommerceAddress(getShippingAddress()))
+  ) {
     await setShippingMethod(selectedMethod);
   }
 
-  if (!isCompleteBillingAddress() && billingDetails?.address) {
-    await commerceGraphql(SET_BILLING_ADDRESS, {
-      cartId: state.cartId,
-      billingAddress: {
-        address: toCommerceAddress(
-          {
-            name: billingDetails.name,
-            address: billingDetails.address,
-          },
-          billingDetails.phone
-        ),
-      },
-    });
+  if (!isCompleteBillingAddress()) {
+    if (isCompleteWalletAddress(billingWallet)) {
+      await persistBillingAddress(billingWallet, phone);
+    } else if (
+      state.walletShippingAddressPersisted ||
+      isCompleteCommerceAddress(getShippingAddress())
+    ) {
+      await commerceGraphql(SET_BILLING_ADDRESS, {
+        cartId: state.cartId,
+        billingAddress: { same_as_shipping: true },
+      });
+    }
   }
 
   return refreshCart({ synchronizeElement: false });
@@ -1013,11 +1154,34 @@ function notifyPaymentFailure(
   }
 }
 
+async function syncAmountAfterWalletUpdate(event) {
+  const synchronizedMoney = getCartMoney();
+  if (
+    synchronizedMoney.currency !== state.currentCurrency ||
+    synchronizedMoney.amount !== state.currentAmount
+  ) {
+    if (synchronizedMoney.currency === state.currentCurrency) {
+      await state.elements.update({ amount: synchronizedMoney.amount });
+      state.currentAmount = synchronizedMoney.amount;
+    }
+    notifyPaymentFailure(
+      event,
+      STRIPE.PAYMENT_FAILED_REASON.INVALID_SHIPPING_ADDRESS
+    );
+    setBadge(dom.paymentStatus, TEXT.ready, BADGE_STATE.SUCCESS);
+    log(LOG.reauthorizationRequired, synchronizedMoney);
+    return false;
+  }
+  return true;
+}
+
 async function placeOrder() {
   const data = await commerceGraphql(PLACE_ORDER, { cartId: state.cartId });
   const result = data?.placeOrder;
   if (result?.errors?.length) {
-    throw new Error(result.errors.map((error) => error.message).join(SEPARATOR.SPACE));
+    throw new Error(
+      result.errors.map((error) => error.message).join(SEPARATOR.SPACE)
+    );
   }
   if (!result?.orderV2) {
     throw new Error(TEXT.orderMissing);
@@ -1034,25 +1198,12 @@ async function runConfirmation(event) {
     cartId: state.cartId,
     amount: state.currentAmount,
     currency: state.currentCurrency,
+    expressPaymentType: event.expressPaymentType,
   });
 
   try {
     await synchronizeWalletDetails(event);
-    const synchronizedMoney = getCartMoney();
-    if (
-      synchronizedMoney.currency !== state.currentCurrency ||
-      synchronizedMoney.amount !== state.currentAmount
-    ) {
-      if (synchronizedMoney.currency === state.currentCurrency) {
-        await state.elements.update({ amount: synchronizedMoney.amount });
-        state.currentAmount = synchronizedMoney.amount;
-      }
-      notifyPaymentFailure(
-        event,
-        STRIPE.PAYMENT_FAILED_REASON.INVALID_SHIPPING_ADDRESS
-      );
-      setBadge(dom.paymentStatus, TEXT.ready, BADGE_STATE.SUCCESS);
-      log(LOG.reauthorizationRequired, synchronizedMoney);
+    if (!(await syncAmountAfterWalletUpdate(event))) {
       return false;
     }
 
@@ -1066,18 +1217,23 @@ async function runConfirmation(event) {
     }
 
     const billingDetails = toStripeBillingDetails(event);
+    const shippingWallet = firstCompleteWallet(
+      toWalletAddress(event.shippingAddress),
+      toWalletAddress(event.billingDetails)
+    );
     const confirmationTokenResult = await state.stripe.createConfirmationToken({
       elements: state.elements,
       params: {
         ...(billingDetails
           ? { payment_method_data: { billing_details: billingDetails } }
           : {}),
-        ...(event.shippingAddress
+        ...(isCompleteWalletAddress(shippingWallet)
           ? {
               shipping: {
-                name: event.shippingAddress.name,
-                phone: event.billingDetails?.phone || null,
-                address: event.shippingAddress.address,
+                name: shippingWallet.name,
+                phone:
+                  event.billingDetails?.phone || shippingWallet.phone || null,
+                address: shippingWallet.address,
               },
             }
           : {}),
@@ -1097,10 +1253,36 @@ async function runConfirmation(event) {
       );
     }
 
-    const confirmationTokenId = confirmationTokenResult.confirmationToken.id;
+    const confirmationToken = confirmationTokenResult.confirmationToken;
+    const confirmationTokenId = confirmationToken.id;
     log(LOG.confirmationTokenCreated, {
       confirmationTokenId,
+      hasShipping: isCompleteWalletAddress(
+        toWalletAddress(confirmationToken.shipping)
+      ),
     });
+
+    if (cartNeedsWalletAddresses()) {
+      await synchronizeWalletDetails(event, {
+        shipping: toWalletAddress(confirmationToken.shipping),
+        billing: toWalletAddress(
+          confirmationToken.payment_method_preview?.billing_details
+        ),
+      });
+      if (!(await syncAmountAfterWalletUpdate(event))) {
+        return false;
+      }
+    }
+    if (cartNeedsWalletAddresses()) {
+      log(LOG.shippingAddressError, {
+        message: TEXT.walletAddressIncomplete,
+        hasEventShipping: Boolean(event.shippingAddress),
+        hasTokenShipping: isCompleteWalletAddress(
+          toWalletAddress(confirmationToken.shipping)
+        ),
+      });
+      throw new Error(TEXT.walletAddressIncomplete);
+    }
 
     const paymentIntentData = await createPaymentIntent(confirmationTokenId);
     log(LOG.intentCreated, {
@@ -1201,6 +1383,7 @@ function registerExpressCheckoutHandlers() {
       cartId: state.cartId,
       amount: state.currentAmount,
       currency: state.currentCurrency,
+      expressPaymentType: event.expressPaymentType,
     });
     event.resolve({ shippingRates: state.currentShippingRates });
   });
@@ -1423,7 +1606,9 @@ async function handleAddProduct(event) {
     });
     const userErrors = data?.addProductsToCart?.user_errors || [];
     if (userErrors.length) {
-      throw new Error(userErrors.map((error) => error.message).join(SEPARATOR.SPACE));
+      throw new Error(
+        userErrors.map((error) => error.message).join(SEPARATOR.SPACE)
+      );
     }
     await refreshCart();
     setBadge(dom.cartStatus, TEXT.addedProduct, BADGE_STATE.SUCCESS);
@@ -1433,6 +1618,7 @@ async function handleAddProduct(event) {
       quantity,
       total: state.cart?.prices?.grand_total,
     });
+    persistPublicConfiguration();
     notifySuccess(TEXT.addedSku(quantity, sku));
   } catch (error) {
     setBadge(dom.cartStatus, error.message, BADGE_STATE.ERROR);
@@ -1502,11 +1688,15 @@ dom.commerceUrl.addEventListener(DOM_EVENT.CHANGE, () => {
   handleCommerceUrlChange();
   syncEnvironmentPresetSelection();
 });
-dom.runtimeBaseUrl.addEventListener(DOM_EVENT.CHANGE, syncEnvironmentPresetSelection);
+dom.runtimeBaseUrl.addEventListener(
+  DOM_EVENT.CHANGE,
+  syncEnvironmentPresetSelection
+);
 dom.createCartButton.addEventListener(DOM_EVENT.CLICK, handleCreateCart);
 dom.cartForm.addEventListener(DOM_EVENT.SUBMIT, handleAddProduct);
 dom.cartId.addEventListener(DOM_EVENT.INPUT, syncCartActionAvailability);
 dom.productSku.addEventListener(DOM_EVENT.INPUT, syncCartActionAvailability);
+dom.productSku.addEventListener(DOM_EVENT.CHANGE, persistPublicConfiguration);
 dom.clearSessionButton.addEventListener(DOM_EVENT.CLICK, clearLocalSession);
 dom.purgeLocalStorageButton?.addEventListener(
   DOM_EVENT.CLICK,
@@ -1523,15 +1713,12 @@ dom.clearLogButton.addEventListener(DOM_EVENT.CLICK, () => {
   notifySuccess(TEXT.checkoutLogCleared);
 });
 
-[
-  dom.commerceUrl,
-  dom.runtimeBaseUrl,
-  dom.customerToken,
-  dom.storeCode,
-].forEach((input) => {
-  input.addEventListener(DOM_EVENT.INPUT, syncStorageActionAvailability);
-  input.addEventListener(DOM_EVENT.CHANGE, syncStorageActionAvailability);
-});
+[dom.commerceUrl, dom.runtimeBaseUrl, dom.customerToken, dom.storeCode].forEach(
+  (input) => {
+    input.addEventListener(DOM_EVENT.INPUT, syncStorageActionAvailability);
+    input.addEventListener(DOM_EVENT.CHANGE, syncStorageActionAvailability);
+  }
+);
 
 async function copyTextToClipboard(text) {
   if (navigator.clipboard?.writeText) {
