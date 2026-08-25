@@ -17,8 +17,8 @@
   <body
     class="m-0 bg-[#f6f7fb] bg-[radial-gradient(circle_at_top_left,var(--color-stripe-soft),transparent_32rem)] font-sans text-ink antialiased"
   >
-    <main class="mx-auto max-w-[1040px] px-5 pb-20 pt-11">
-      <header class="max-w-[760px]">
+    <main class="mx-auto max-w-260 px-5 pb-20 pt-11">
+      <header class="max-w-190">
         <p
           class="m-0 text-[0.75rem] font-[750] tracking-[0.09em] text-stripe uppercase"
         >
@@ -37,7 +37,7 @@
       </header>
 
       <div
-        class="mt-[22px] flex items-start gap-3 rounded-[14px] border border-orange-300 bg-orange-50 px-[17px] py-3.5 leading-normal text-orange-800"
+        class="mt-5.5 flex items-start gap-3 rounded-[14px] border border-orange-300 bg-orange-50 px-4.25 py-3.5 leading-normal text-orange-800"
         role="alert"
       >
         <svg
@@ -63,7 +63,7 @@
       </div>
 
       <div
-        class="mt-3 flex items-start gap-3 rounded-[14px] border border-sky-300 bg-sky-50 px-[17px] py-3.5 leading-normal text-sky-900"
+        class="mt-3 flex items-start gap-3 rounded-[14px] border border-sky-300 bg-sky-50 px-4.25 py-3.5 leading-normal text-sky-900"
         role="note"
       >
         <svg
@@ -101,11 +101,11 @@ open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args
       </div>
 
       <section
-        class="mt-[22px] rounded-[14px] border border-gray-200 bg-white p-[clamp(18px,4vw,28px)] shadow-[0_14px_36px_rgb(15_23_42_/_6%)]"
+        class="mt-5.5 rounded-[14px] border border-gray-200 bg-white p-[clamp(18px,4vw,28px)] shadow-[0_14px_36px_rgb(15_23_42/6%)]"
         aria-labelledby="configuration-heading"
       >
         <div
-          class="mb-5 flex items-center justify-between gap-[18px] max-[700px]:items-start"
+          class="mb-5 flex items-center justify-between gap-4.5 max-[700px]:items-start"
         >
           <div>
             <p
@@ -115,7 +115,7 @@ open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args
             </p>
             <h2
               id="configuration-heading"
-              class="mt-[3px] mb-0 text-xl text-ink-strong"
+              class="mt-0.75 mb-0 text-xl text-ink-strong"
             >
               Connect the storefront
             </h2>
@@ -131,13 +131,13 @@ open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args
           id="configuration-form"
           class="grid grid-cols-1 gap-4 min-[701px]:grid-cols-2"
         >
-          <label class="grid gap-[7px] min-[701px]:col-span-2">
+          <label class="grid gap-1.75 min-[701px]:col-span-2">
             <span class="text-[0.82rem] font-bold text-gray-700"
               >Environment preset</span
             >
             <select
               id="environment-preset"
-              class="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-[11px] py-[9px] text-ink-strong focus:border-stripe focus:ring-[3px] focus:ring-stripe/14 focus:outline-none"
+              class="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-2.75 py-2.25 text-ink-strong focus:border-stripe focus:ring-[3px] focus:ring-stripe/14 focus:outline-none"
             >
               <option value="">Custom</option>
               <option value="saas">SaaS sandbox</option>
@@ -145,13 +145,13 @@ open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args
             </select>
           </label>
 
-          <label class="grid gap-[7px] min-[701px]:col-span-2">
+          <label class="grid gap-1.75 min-[701px]:col-span-2">
             <span class="text-[0.82rem] font-bold text-gray-700"
               >Adobe Commerce GraphQL URL</span
             >
             <input
               id="commerce-url"
-              class="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-[11px] py-[9px] text-ink-strong focus:border-stripe focus:ring-[3px] focus:ring-stripe/14 focus:outline-none"
+              class="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-2.75 py-2.25 text-ink-strong focus:border-stripe focus:ring-[3px] focus:ring-stripe/14 focus:outline-none"
               type="url"
               autocomplete="url"
               placeholder="https://commerce.example/graphql"
@@ -159,38 +159,38 @@ open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args
             />
           </label>
 
-          <label class="grid gap-[7px]">
+          <label class="grid gap-1.75">
             <span class="text-[0.82rem] font-bold text-gray-700"
               >Store view</span
             >
             <input
               id="store-code"
-              class="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-[11px] py-[9px] text-ink-strong focus:border-stripe focus:ring-[3px] focus:ring-stripe/14 focus:outline-none"
+              class="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-2.75 py-2.25 text-ink-strong focus:border-stripe focus:ring-[3px] focus:ring-stripe/14 focus:outline-none"
               type="text"
               value="default"
               required
             />
           </label>
 
-          <label class="grid gap-[7px]">
+          <label class="grid gap-1.75">
             <span class="text-[0.82rem] font-bold text-gray-700"
               >App Builder base URL override</span
             >
             <input
               id="runtime-base-url"
-              class="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-[11px] py-[9px] text-ink-strong focus:border-stripe focus:ring-[3px] focus:ring-stripe/14 focus:outline-none"
+              class="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-2.75 py-2.25 text-ink-strong focus:border-stripe focus:ring-[3px] focus:ring-stripe/14 focus:outline-none"
               type="url"
               placeholder="Discovered from Commerce"
             />
           </label>
 
-          <label class="grid gap-[7px] min-[701px]:col-span-2">
+          <label class="grid gap-1.75 min-[701px]:col-span-2">
             <span class="text-[0.82rem] font-bold text-gray-700"
               >Customer bearer token (optional)</span
             >
             <input
               id="customer-token"
-              class="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-[11px] py-[9px] text-ink-strong focus:border-stripe focus:ring-[3px] focus:ring-stripe/14 focus:outline-none"
+              class="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-2.75 py-2.25 text-ink-strong focus:border-stripe focus:ring-[3px] focus:ring-stripe/14 focus:outline-none"
               type="password"
               autocomplete="off"
               placeholder="Leave empty for guest checkout"
@@ -202,7 +202,7 @@ open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args
           >
             <button
               id="connect-button"
-              class="inline-flex min-h-[34px] cursor-pointer items-center justify-center gap-2 rounded-lg border border-stripe bg-stripe px-2.5 py-1.5 text-[0.78rem] font-bold min-[701px]:min-h-[42px] min-[701px]:px-[15px] min-[701px]:py-[9px] min-[701px]:text-base text-white hover:enabled:bg-stripe-hover disabled:cursor-wait disabled:opacity-55"
+              class="inline-flex min-h-8.5 cursor-pointer items-center justify-center gap-2 rounded-lg border border-stripe bg-stripe px-2.5 py-1.5 text-[0.78rem] font-bold min-[701px]:min-h-10.5 min-[701px]:px-3.75 min-[701px]:py-2.25 min-[701px]:text-base text-white hover:enabled:bg-stripe-hover disabled:cursor-wait disabled:opacity-55"
               type="submit"
             >
               <svg
@@ -229,7 +229,7 @@ open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args
                 id="clear-session-button"
                 type="button"
                 disabled
-                class="inline-flex min-h-[34px] cursor-pointer items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-[0.78rem] font-bold min-[701px]:min-h-[42px] min-[701px]:px-[15px] min-[701px]:py-[9px] min-[701px]:text-base text-gray-700 hover:enabled:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-55"
+                class="inline-flex min-h-8.5 cursor-pointer items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-[0.78rem] font-bold min-[701px]:min-h-10.5 min-[701px]:px-3.75 min-[701px]:py-2.25 min-[701px]:text-base text-gray-700 hover:enabled:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-55"
               >
                 <svg
                   class="h-[1em] w-[1em]"
@@ -252,7 +252,7 @@ open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args
                 id="purge-local-storage-button"
                 type="button"
                 disabled
-                class="inline-flex min-h-[34px] cursor-pointer items-center justify-center gap-2 rounded-lg border border-red-600 bg-red-600 px-2.5 py-1.5 text-[0.78rem] font-bold min-[701px]:min-h-[42px] min-[701px]:px-[15px] min-[701px]:py-[9px] min-[701px]:text-base text-white hover:enabled:bg-red-700 disabled:cursor-not-allowed disabled:opacity-55"
+                class="inline-flex min-h-8.5 cursor-pointer items-center justify-center gap-2 rounded-lg border border-red-600 bg-red-600 px-2.5 py-1.5 text-[0.78rem] font-bold min-[701px]:min-h-10.5 min-[701px]:px-3.75 min-[701px]:py-2.25 min-[701px]:text-base text-white hover:enabled:bg-red-700 disabled:cursor-not-allowed disabled:opacity-55"
               >
                 <svg
                   class="h-[1em] w-[1em]"
@@ -278,11 +278,11 @@ open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args
       </section>
 
       <section
-        class="mt-[22px] rounded-[14px] border border-gray-200 bg-white p-[clamp(18px,4vw,28px)] shadow-[0_14px_36px_rgb(15_23_42_/_6%)]"
+        class="mt-5.5 rounded-[14px] border border-gray-200 bg-white p-[clamp(18px,4vw,28px)] shadow-[0_14px_36px_rgb(15_23_42/6%)]"
         aria-labelledby="cart-heading"
       >
         <div
-          class="mb-5 flex items-center justify-between gap-[18px] max-[700px]:items-start"
+          class="mb-5 flex items-center justify-between gap-4.5 max-[700px]:items-start"
         >
           <div>
             <p
@@ -290,7 +290,7 @@ open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args
             >
               Step 2
             </p>
-            <h2 id="cart-heading" class="mt-[3px] mb-0 text-xl text-ink-strong">
+            <h2 id="cart-heading" class="mt-0.75 mb-0 text-xl text-ink-strong">
               Prepare a cart
             </h2>
           </div>
@@ -305,34 +305,34 @@ open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args
           id="cart-form"
           class="grid grid-cols-1 gap-4 min-[701px]:grid-cols-2"
         >
-          <label class="grid gap-[7px] min-[701px]:col-span-2">
+          <label class="grid gap-1.75 min-[701px]:col-span-2">
             <span class="text-[0.82rem] font-bold text-gray-700">Cart ID</span>
             <input
               id="cart-id"
-              class="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-[11px] py-[9px] text-ink-strong focus:border-stripe focus:ring-[3px] focus:ring-stripe/14 focus:outline-none"
+              class="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-2.75 py-2.25 text-ink-strong focus:border-stripe focus:ring-[3px] focus:ring-stripe/14 focus:outline-none"
               type="text"
               autocomplete="off"
               placeholder="Created or loaded automatically"
             />
           </label>
 
-          <label class="grid gap-[7px]">
+          <label class="grid gap-1.75">
             <span class="text-[0.82rem] font-bold text-gray-700"
               >Product SKU</span
             >
             <input
               id="product-sku"
-              class="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-[11px] py-[9px] text-ink-strong focus:border-stripe focus:ring-[3px] focus:ring-stripe/14 focus:outline-none"
+              class="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-2.75 py-2.25 text-ink-strong focus:border-stripe focus:ring-[3px] focus:ring-stripe/14 focus:outline-none"
               type="text"
               autocomplete="off"
             />
           </label>
 
-          <label class="grid gap-[7px]">
+          <label class="grid gap-1.75">
             <span class="text-[0.82rem] font-bold text-gray-700">Quantity</span>
             <input
               id="product-quantity"
-              class="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-[11px] py-[9px] text-ink-strong focus:border-stripe focus:ring-[3px] focus:ring-stripe/14 focus:outline-none"
+              class="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-2.75 py-2.25 text-ink-strong focus:border-stripe focus:ring-[3px] focus:ring-stripe/14 focus:outline-none"
               type="number"
               min="1"
               value="1"
@@ -344,7 +344,7 @@ open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args
               id="create-cart-button"
               type="button"
               disabled
-              class="inline-flex min-h-[34px] cursor-pointer items-center justify-center gap-2 rounded-lg border border-stripe bg-stripe px-2.5 py-1.5 text-[0.78rem] font-bold min-[701px]:min-h-[42px] min-[701px]:px-[15px] min-[701px]:py-[9px] min-[701px]:text-base text-white hover:enabled:bg-stripe-hover disabled:cursor-not-allowed disabled:opacity-55"
+              class="inline-flex min-h-8.5 cursor-pointer items-center justify-center gap-2 rounded-lg border border-stripe bg-stripe px-2.5 py-1.5 text-[0.78rem] font-bold min-[701px]:min-h-10.5 min-[701px]:px-3.75 min-[701px]:py-2.25 min-[701px]:text-base text-white hover:enabled:bg-stripe-hover disabled:cursor-not-allowed disabled:opacity-55"
             >
               <svg
                 class="h-[1em] w-[1em]"
@@ -368,7 +368,7 @@ open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args
               id="add-product-button"
               type="submit"
               disabled
-              class="inline-flex min-h-[34px] cursor-pointer items-center justify-center gap-2 rounded-lg border border-stripe bg-stripe px-2.5 py-1.5 text-[0.78rem] font-bold min-[701px]:min-h-[42px] min-[701px]:px-[15px] min-[701px]:py-[9px] min-[701px]:text-base text-white hover:enabled:bg-stripe-hover disabled:cursor-not-allowed disabled:opacity-55"
+              class="inline-flex min-h-8.5 cursor-pointer items-center justify-center gap-2 rounded-lg border border-stripe bg-stripe px-2.5 py-1.5 text-[0.78rem] font-bold min-[701px]:min-h-10.5 min-[701px]:px-3.75 min-[701px]:py-2.25 min-[701px]:text-base text-white hover:enabled:bg-stripe-hover disabled:cursor-not-allowed disabled:opacity-55"
             >
               <svg
                 class="h-[1em] w-[1em]"
@@ -394,9 +394,9 @@ open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args
           </div>
         </form>
 
-        <dl class="mt-[22px] grid grid-cols-1 gap-3 min-[701px]:grid-cols-3">
+        <dl class="mt-5.5 grid grid-cols-1 gap-3 min-[701px]:grid-cols-3">
           <div
-            class="min-h-[72px] rounded-[9px] bg-gray-50 px-[13px] py-[11px]"
+            class="min-h-18 rounded-[9px] bg-gray-50 px-3.25 py-2.75"
           >
             <dt
               class="text-[0.7rem] font-[750] tracking-[0.06em] text-gray-500 uppercase"
@@ -405,25 +405,25 @@ open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args
             </dt>
             <dd
               id="summary-customer"
-              class="mt-1.5 mb-0 [overflow-wrap:anywhere]"
+              class="mt-1.5 mb-0 wrap-anywhere"
             >
               —
             </dd>
           </div>
           <div
-            class="min-h-[72px] rounded-[9px] bg-gray-50 px-[13px] py-[11px]"
+            class="min-h-18 rounded-[9px] bg-gray-50 px-3.25 py-2.75"
           >
             <dt
               class="text-[0.7rem] font-[750] tracking-[0.06em] text-gray-500 uppercase"
             >
               Total
             </dt>
-            <dd id="summary-total" class="mt-1.5 mb-0 [overflow-wrap:anywhere]">
+            <dd id="summary-total" class="mt-1.5 mb-0 wrap-anywhere">
               —
             </dd>
           </div>
           <div
-            class="min-h-[72px] rounded-[9px] bg-gray-50 px-[13px] py-[11px]"
+            class="min-h-18 rounded-[9px] bg-gray-50 px-3.25 py-2.75"
           >
             <dt
               class="text-[0.7rem] font-[750] tracking-[0.06em] text-gray-500 uppercase"
@@ -432,13 +432,13 @@ open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args
             </dt>
             <dd
               id="summary-shipping-address"
-              class="mt-1.5 mb-0 [overflow-wrap:anywhere]"
+              class="mt-1.5 mb-0 wrap-anywhere"
             >
               —
             </dd>
           </div>
           <div
-            class="min-h-[72px] rounded-[9px] bg-gray-50 px-[13px] py-[11px]"
+            class="min-h-18 rounded-[9px] bg-gray-50 px-3.25 py-2.75"
           >
             <dt
               class="text-[0.7rem] font-[750] tracking-[0.06em] text-gray-500 uppercase"
@@ -447,13 +447,13 @@ open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args
             </dt>
             <dd
               id="summary-shipping-method"
-              class="mt-1.5 mb-0 [overflow-wrap:anywhere]"
+              class="mt-1.5 mb-0 wrap-anywhere"
             >
               —
             </dd>
           </div>
           <div
-            class="min-h-[72px] rounded-[9px] bg-gray-50 px-[13px] py-[11px]"
+            class="min-h-18 rounded-[9px] bg-gray-50 px-3.25 py-2.75"
           >
             <dt
               class="text-[0.7rem] font-[750] tracking-[0.06em] text-gray-500 uppercase"
@@ -462,13 +462,13 @@ open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args
             </dt>
             <dd
               id="summary-stripe"
-              class="mt-1.5 mb-0 [overflow-wrap:anywhere]"
+              class="mt-1.5 mb-0 wrap-anywhere"
             >
               —
             </dd>
           </div>
           <div
-            class="min-h-[72px] rounded-[9px] bg-gray-50 px-[13px] py-[11px]"
+            class="min-h-18 rounded-[9px] bg-gray-50 px-3.25 py-2.75"
           >
             <dt
               class="text-[0.7rem] font-[750] tracking-[0.06em] text-gray-500 uppercase"
@@ -477,7 +477,7 @@ open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args
             </dt>
             <dd
               id="summary-capture"
-              class="mt-1.5 mb-0 [overflow-wrap:anywhere]"
+              class="mt-1.5 mb-0 wrap-anywhere"
             >
               —
             </dd>
@@ -487,12 +487,12 @@ open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args
 
       <section
         id="express-checkout-section"
-        class="mt-[22px] hidden rounded-[14px] border border-gray-200 bg-white p-[clamp(18px,4vw,28px)] shadow-[0_14px_36px_rgb(15_23_42_/_6%)]"
+        class="mt-5.5 hidden rounded-[14px] border border-gray-200 bg-white p-[clamp(18px,4vw,28px)] shadow-[0_14px_36px_rgb(15_23_42/6%)]"
         aria-labelledby="express-checkout-heading"
       >
         <div id="payment-content">
           <div
-            class="mb-5 flex items-center justify-between gap-[18px] max-[700px]:items-start"
+            class="mb-5 flex items-center justify-between gap-4.5 max-[700px]:items-start"
           >
             <div>
               <p
@@ -502,7 +502,7 @@ open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args
               </p>
               <h2
                 id="express-checkout-heading"
-                class="mt-[3px] mb-0 text-xl text-ink-strong"
+                class="mt-0.75 mb-0 text-xl text-ink-strong"
               >
                 Pay with a wallet
               </h2>
@@ -523,13 +523,13 @@ open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args
 
         <div
           id="order-success"
-          class="flex flex-col items-center gap-2 rounded-[14px] border border-green-300 bg-gradient-to-b from-emerald-50 to-green-50 px-5 py-[clamp(28px,7vw,56px)] text-center leading-snug text-emerald-800"
+          class="flex flex-col items-center gap-2 rounded-[14px] border border-green-300 bg-linear-to-b from-emerald-50 to-green-50 px-5 py-[clamp(28px,7vw,56px)] text-center leading-snug text-emerald-800"
           hidden
           role="status"
           aria-live="polite"
         >
           <div
-            class="mb-1.5 flex h-[72px] w-[72px] items-center justify-center rounded-full border-[7px] border-emerald-100 bg-emerald-600 text-[2rem] leading-none font-extrabold text-white"
+            class="mb-1.5 flex h-18 w-18 items-center justify-center rounded-full border-[7px] border-emerald-100 bg-emerald-600 text-[2rem] leading-none font-extrabold text-white"
             aria-hidden="true"
           >
             ✓
@@ -550,7 +550,7 @@ open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args
           <button
             id="start-over-button"
             type="button"
-            class="mt-4 inline-flex min-h-[34px] cursor-pointer items-center justify-center gap-2 rounded-lg border border-stripe bg-stripe px-2.5 py-1.5 text-[0.78rem] font-bold min-[701px]:min-h-[42px] min-[701px]:px-[15px] min-[701px]:py-[9px] min-[701px]:text-base text-white hover:enabled:bg-stripe-hover disabled:cursor-not-allowed disabled:opacity-55"
+            class="mt-4 inline-flex min-h-8.5 cursor-pointer items-center justify-center gap-2 rounded-lg border border-stripe bg-stripe px-2.5 py-1.5 text-[0.78rem] font-bold min-[701px]:min-h-10.5 min-[701px]:px-3.75 min-[701px]:py-2.25 min-[701px]:text-base text-white hover:enabled:bg-stripe-hover disabled:cursor-not-allowed disabled:opacity-55"
           >
             <svg
               class="h-[1em] w-[1em]"
@@ -573,7 +573,7 @@ open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args
       </section>
 
       <section
-        class="mt-[22px] rounded-[14px] border border-gray-200 bg-white p-[clamp(18px,4vw,28px)] shadow-[0_14px_36px_rgb(15_23_42_/_6%)]"
+        class="mt-5.5 rounded-[14px] border border-gray-200 bg-white p-[clamp(18px,4vw,28px)] shadow-[0_14px_36px_rgb(15_23_42/6%)]"
         aria-labelledby="result-heading"
       >
         <div class="mb-5">
@@ -582,7 +582,7 @@ open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args
           >
             Diagnostics
           </p>
-          <h2 id="result-heading" class="mt-[3px] mb-0 text-xl text-ink-strong">
+          <h2 id="result-heading" class="mt-0.75 mb-0 text-xl text-ink-strong">
             Checkout log
           </h2>
           <div class="mt-4 flex flex-wrap items-center justify-end gap-2.5">
@@ -590,7 +590,7 @@ open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args
               id="copy-log-button"
               type="button"
               disabled
-              class="inline-flex min-h-[34px] cursor-pointer items-center justify-center gap-2 rounded-lg border border-stripe bg-stripe px-2.5 py-1.5 text-[0.78rem] font-bold min-[701px]:min-h-[42px] min-[701px]:px-[15px] min-[701px]:py-[9px] min-[701px]:text-base text-white hover:enabled:bg-stripe-hover disabled:cursor-not-allowed disabled:opacity-55"
+              class="inline-flex min-h-8.5 cursor-pointer items-center justify-center gap-2 rounded-lg border border-stripe bg-stripe px-2.5 py-1.5 text-[0.78rem] font-bold min-[701px]:min-h-10.5 min-[701px]:px-3.75 min-[701px]:py-2.25 min-[701px]:text-base text-white hover:enabled:bg-stripe-hover disabled:cursor-not-allowed disabled:opacity-55"
             >
               <svg
                 class="h-[1em] w-[1em]"
@@ -613,7 +613,7 @@ open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args
               id="clear-log-button"
               type="button"
               disabled
-              class="inline-flex min-h-[34px] cursor-pointer items-center justify-center gap-2 rounded-lg border border-stripe bg-stripe px-2.5 py-1.5 text-[0.78rem] font-bold min-[701px]:min-h-[42px] min-[701px]:px-[15px] min-[701px]:py-[9px] min-[701px]:text-base text-white hover:enabled:bg-stripe-hover disabled:cursor-not-allowed disabled:opacity-55"
+              class="inline-flex min-h-8.5 cursor-pointer items-center justify-center gap-2 rounded-lg border border-stripe bg-stripe px-2.5 py-1.5 text-[0.78rem] font-bold min-[701px]:min-h-10.5 min-[701px]:px-3.75 min-[701px]:py-2.25 min-[701px]:text-base text-white hover:enabled:bg-stripe-hover disabled:cursor-not-allowed disabled:opacity-55"
             >
               <svg
                 class="h-[1em] w-[1em]"
@@ -639,7 +639,7 @@ open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args
         </div>
         <pre
           id="storefront-log"
-          class="m-0 max-h-[440px] min-h-[130px] overflow-auto rounded-[9px] bg-gray-900 p-[15px] font-mono text-xs leading-[1.55] whitespace-pre-wrap text-emerald-100"
+          class="m-0 max-h-110 min-h-32.5 overflow-auto rounded-[9px] bg-gray-900 p-3.75 font-mono text-xs leading-[1.55] whitespace-pre-wrap text-emerald-100"
           aria-live="polite"
         ></pre>
       </section>
@@ -647,11 +647,11 @@ open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args
 
     <div
       id="checkout-blocker"
-      class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white/72"
+      class="fixed inset-0 z-9999 flex flex-col items-center justify-center bg-white/72"
       hidden
     >
       <div
-        class="h-[38px] w-[38px] animate-spin rounded-full border-4 border-stripe/20 border-t-stripe"
+        class="h-9.5 w-9.5 animate-spin rounded-full border-4 border-stripe/20 border-t-stripe"
         aria-hidden="true"
       ></div>
       <p class="font-[750] text-indigo-900">Wallet checkout is open…</p>

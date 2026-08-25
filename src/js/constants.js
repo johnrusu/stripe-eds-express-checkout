@@ -316,7 +316,7 @@ export const NOTIFICATION = Object.freeze({
   HOST_CLASS:
     "pointer-events-none fixed right-4 bottom-4 z-40 flex max-w-[min(24rem,calc(100vw-1.5rem))] flex-col gap-2.5 max-[700px]:inset-x-3 max-[700px]:bottom-3 max-[700px]:max-w-none",
   TOAST_BASE_CLASS:
-    "pointer-events-auto grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5 rounded-[10px] px-[0.9rem] py-[0.85rem] text-white opacity-0 shadow-[0_12px_30px_rgb(17_24_39_/_18%)] transition duration-[160ms] ease-out translate-y-2",
+    "pointer-events-auto grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5 rounded-[10px] px-[0.9rem] py-[0.85rem] text-white opacity-0 shadow-[0_12px_30px_rgb(17_24_39/18%)] transition duration-160 ease-out translate-y-2",
   ENTER_CLASSES: Object.freeze(["opacity-100", "translate-y-0"]),
   LEAVE_CLASSES: Object.freeze(["opacity-0", "translate-y-1.5"]),
   INITIAL_HIDDEN_CLASSES: Object.freeze(["opacity-0", "translate-y-2"]),
