@@ -10,6 +10,7 @@ import {
 import { state } from "./state.js";
 import { log } from "./logging.js";
 import { commerceGraphql } from "./config.js";
+import { toStripeMinorUnits } from "./money.js";
 import {
   isCompleteWalletAddress,
   toCommerceAddress,
@@ -51,7 +52,10 @@ export function toStripeShippingRate(method) {
       [method.carrier_title, method.method_title]
         .filter(Boolean)
         .join(SEPARATOR.EM_DASH) || method.method_code,
-    amount: Math.round(Number(amount.value) * 100),
+    amount: toStripeMinorUnits(
+      amount.value,
+      amount.currency || state.cart?.prices?.grand_total?.currency
+    ),
   };
 }
 
@@ -71,7 +75,13 @@ export function getSelectedShippingAmountCents(cart = state.cart) {
   const amount =
     method.amount || method.price_incl_tax || method.price_excl_tax;
   const value = Number(amount?.value);
-  return Number.isFinite(value) ? Math.round(value * 100) : 0;
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+  return toStripeMinorUnits(
+    value,
+    amount.currency || cart?.prices?.grand_total?.currency
+  );
 }
 
 export function getAmountWithShippingRate(shippingRate) {

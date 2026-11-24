@@ -15,6 +15,7 @@ import {
 } from "../constants.js";
 import { notifyWarning } from "../notifications.js";
 import { dom } from "./dom.js";
+import { toStripeMinorUnits } from "./money.js";
 import { state } from "./state.js";
 import { log, setBadge } from "./logging.js";
 import { commerceGraphql, getConfig } from "./config.js";
@@ -109,7 +110,7 @@ export function getCartMoney(cart = state.cart) {
     throw new Error(TEXT.cartTotalUnavailable);
   }
   return {
-    amount: Math.round(Number(money.value) * 100),
+    amount: toStripeMinorUnits(money.value, money.currency),
     currency: String(money.currency).toLowerCase(),
   };
 }

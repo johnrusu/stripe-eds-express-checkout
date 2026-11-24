@@ -9,6 +9,39 @@ export const DEFAULT_PRODUCT_QUANTITY = "1";
 export const EMPTY_DISPLAY = "—";
 export const JSON_NULL = "null";
 
+// Stripe minor-unit rules. Amounts sent to Stripe use these precisions; any
+// currency not listed here has two decimals.
+export const STRIPE_ZERO_DECIMAL_CURRENCIES = new Set([
+  "BIF",
+  "CLP",
+  "DJF",
+  "GNF",
+  "JPY",
+  "KMF",
+  "KRW",
+  "MGA",
+  "PYG",
+  "RWF",
+  "UGX",
+  "VND",
+  "VUV",
+  "XAF",
+  "XOF",
+  "XPF",
+]);
+
+export const STRIPE_THREE_DECIMAL_CURRENCIES = new Set([
+  "BHD",
+  "JOD",
+  "KWD",
+  "OMR",
+  "TND",
+]);
+
+// Stripe.js releases newer than the init-params apiVersion refuse that option.
+export const STRIPE_API_VERSION_OPTION = "apiVersion";
+export const STRIPE_API_VERSION_REFUSED_PATTERN = /apiVersion/i;
+
 export const COMMERCE_URL_PATTERN = /^https?:\/\//i;
 export const WALLET_NAME_SPLIT_PATTERN = /\s+/;
 

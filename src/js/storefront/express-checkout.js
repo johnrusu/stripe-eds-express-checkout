@@ -1,6 +1,17 @@
 /* global Stripe */
 
-import { ARIA, BADGE_STATE, CONSOLE, CSS_CLASS, LOG, SELECTOR, STRIPE, TEXT } from "../constants.js";
+import {
+  ARIA,
+  BADGE_STATE,
+  CONSOLE,
+  CSS_CLASS,
+  LOG,
+  SELECTOR,
+  STRIPE,
+  STRIPE_API_VERSION_OPTION,
+  STRIPE_API_VERSION_REFUSED_PATTERN,
+  TEXT,
+} from "../constants.js";
 import { dom } from "./dom.js";
 import { state } from "./state.js";
 import { log, setBadge } from "./logging.js";
@@ -198,6 +209,30 @@ function registerExpressCheckoutHandlers() {
   );
 }
 
+/**
+ * Create the Stripe instance from the init-params options. Newer Stripe.js
+ * releases refuse an `apiVersion` option and throw a VersionError; in that case
+ * the instance is created without it so the release uses its own API version.
+ * @param {string} publishableKey Stripe publishable key.
+ * @param {Object} [options] Stripe.js options from init-params.
+ * @returns {Object} Stripe instance.
+ */
+function createStripe(publishableKey, options) {
+  try {
+    return Stripe(publishableKey, options);
+  } catch (error) {
+    if (
+      !options?.[STRIPE_API_VERSION_OPTION] ||
+      !STRIPE_API_VERSION_REFUSED_PATTERN.test(error?.message || "")
+    ) {
+      throw error;
+    }
+    const releaseOptions = { ...options };
+    delete releaseOptions[STRIPE_API_VERSION_OPTION];
+    return Stripe(publishableKey, releaseOptions);
+  }
+}
+
 export async function mountExpressCheckout() {
   if (!state.cart || !getStripePaymentMethod()) {
     hideExpressCheckout(TEXT.stripeMissing);
@@ -212,7 +247,7 @@ export async function mountExpressCheckout() {
   try {
     state.runtimeConfig = discoverRuntimeConfig();
     state.initParams = await fetchInitParams();
-    state.stripe = Stripe(
+    state.stripe = createStripe(
       state.initParams.publishableKey,
       state.initParams.options
     );

@@ -121,6 +121,9 @@ export function toCommerceAddress(walletAddress, phone) {
     city: address.city,
     country_code: address.country,
     postcode: address.postal_code,
+    // Commerce defaults this to true. Wallet details are for this order only;
+    // saving them again would duplicate customer addresses at order placement.
+    save_in_address_book: false,
     ...(address.state ? { region: address.state } : {}),
     ...(telephone ? { telephone } : {}),
   };
