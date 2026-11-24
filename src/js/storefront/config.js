@@ -166,7 +166,16 @@ export async function commerceGraphql(query, variables = {}) {
     const message =
       result?.errors?.map((error) => error.message).join(SEPARATOR.SPACE) ||
       `${response.status} ${response.statusText}`;
-    throw new Error(message);
+    const error = new Error(message);
+    // Keep what Commerce returns with the error: the per-error extensions
+    // (category, code) and the request id Adobe needs to find the server log.
+    error.graphqlErrors = result?.errors?.map((entry) => ({
+      message: entry.message,
+      path: entry.path,
+      extensions: entry.extensions,
+    }));
+    error.commerceRequestId = result?.extensions?.["request-id"];
+    throw error;
   }
 
   return result?.data;

@@ -104,11 +104,20 @@ export async function previewWalletAmount(shippingRate) {
   return previewAmount;
 }
 
+/**
+ * Save the wallet shipping address on the cart. The street is sent as one line:
+ * on the Adobe Commerce SaaS sandbox, placeOrder fails with UNABLE_TO_PLACE_ORDER
+ * whenever the shipping address has a second street line (verified 2026-11-24;
+ * the billing address is not affected and keeps its lines).
+ * @param {Object} walletAddress Wallet address in Stripe's shape.
+ * @param {string} [phone] Phone number from the wallet.
+ */
 export async function setShippingAddress(walletAddress, phone) {
+  const address = toCommerceAddress(walletAddress, phone);
   await commerceGraphql(SET_SHIPPING_ADDRESS, {
     cartId: state.cartId,
     shippingAddress: {
-      address: toCommerceAddress(walletAddress, phone),
+      address: { ...address, street: [address.street.join(SEPARATOR.COMMA)] },
     },
   });
   state.walletShippingAddressPersisted = true;

@@ -438,6 +438,8 @@ async function runConfirmation(event) {
       code: error?.code,
       declineCode: error?.decline_code,
       paymentIntentId: error?.payment_intent?.id,
+      graphqlErrors: error?.graphqlErrors,
+      commerceRequestId: error?.commerceRequestId,
     });
     notifyError(error?.message || TEXT.paymentFailed);
     return false;
