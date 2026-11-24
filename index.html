@@ -519,6 +519,23 @@ open -n -a /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --args
             Missing guest email, billing details, shipping address, and shipping
             method are collected by the wallet when required.
           </p>
+
+          <div
+            id="region-picker"
+            class="mt-4 rounded-[14px] border border-amber-300 bg-amber-50 p-4"
+            hidden
+          >
+            <p id="region-picker-message" class="text-sm text-amber-900"></p>
+            <label
+              for="region-select"
+              class="mt-3 block text-sm font-semibold text-ink-strong"
+              >Region</label
+            >
+            <select
+              id="region-select"
+              class="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-base"
+            ></select>
+          </div>
         </div>
 
         <div

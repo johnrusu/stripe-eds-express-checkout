@@ -193,6 +193,9 @@ export const SELECTOR = Object.freeze({
   summaryTotal: "#summary-total",
   wallet: "#express-checkout-element",
   purgeLocalStorageButton: "#purge-local-storage-button",
+  regionPicker: "#region-picker",
+  regionPickerMessage: "#region-picker-message",
+  regionSelect: "#region-select",
 });
 
 export const ENVIRONMENTS = Object.freeze({
@@ -217,6 +220,11 @@ export const ENVIRONMENTS = Object.freeze({
 export const TEXT = Object.freeze({
   addedProduct: "Product added",
   available: "Available",
+  regionPlaceholder: "Choose a region",
+  regionRequired: (country) =>
+    `Your wallet did not send a region for ${country}. Choose it below, then pay with your wallet again.`,
+  regionSaved: (country) =>
+    `Region saved for ${country}. Pay with your wallet again.`,
   cartLoaded: "Cart loaded",
   cartMissing: "Create or load a cart first.",
   connected: "Connected",
@@ -304,6 +312,8 @@ export const LOG = Object.freeze({
   shippingRateError: "wallet/shipping-rate-error",
   paymentMethodGenericFallback: "commerce/payment-method-generic-fallback",
   paymentStarted: "payment/started",
+  regionRequired: "wallet/region-required",
+  regionSelected: "wallet/region-selected",
   reauthorizationRequired: "payment/reauthorization-required",
   confirmationTokenCreated: "payment/confirmation-token-created",
   intentCreated: "payment/intent-created",
@@ -552,6 +562,16 @@ export const SET_PAAS_PAYMENT_METHOD = `
       }
     ) {
       cart { id selected_payment_method { code title } }
+    }
+  }
+`;
+
+// Regions Commerce accepts for a country. Empty for countries without regions.
+export const GET_COUNTRY_REGIONS = `
+  query GetCountryRegions($countryCode: String!) {
+    country(id: $countryCode) {
+      id
+      available_regions { id code name }
     }
   }
 `;

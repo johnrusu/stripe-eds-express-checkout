@@ -1,4 +1,16 @@
 import { SEPARATOR, TEXT, WALLET_NAME_SPLIT_PATTERN } from "../constants.js";
+import { state } from "./state.js";
+
+/**
+ * The region the shopper picked on the page for a country whose wallet
+ * address has no region. Returns null when none was picked for that country.
+ * @param {string} countryCode ISO country code from the wallet address.
+ * @returns {{countryCode: string, id: number, code: string, name: string}|null}
+ */
+export function getSelectedRegion(countryCode) {
+  const code = String(countryCode || "").toUpperCase();
+  return state.selectedRegion?.countryCode === code ? state.selectedRegion : null;
+}
 
 export function splitName(name) {
   const parts = String(name || "")
@@ -115,6 +127,9 @@ export function toCommerceAddress(walletAddress, phone) {
   const name = splitName(normalized.name);
   const address = normalized.address;
   const telephone = phone || normalized.phone;
+  const selectedRegion = address.state
+    ? null
+    : getSelectedRegion(address.country);
   return {
     ...name,
     street: [address.line1, address.line2].filter(Boolean),
@@ -125,6 +140,9 @@ export function toCommerceAddress(walletAddress, phone) {
     // saving them again would duplicate customer addresses at order placement.
     save_in_address_book: false,
     ...(address.state ? { region: address.state } : {}),
+    ...(selectedRegion
+      ? { region_id: selectedRegion.id, region: selectedRegion.code }
+      : {}),
     ...(telephone ? { telephone } : {}),
   };
 }

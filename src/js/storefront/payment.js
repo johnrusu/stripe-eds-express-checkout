@@ -38,6 +38,10 @@ import {
   toWalletAddress,
 } from "./wallet-address.js";
 import { destroyExpressCheckout, setCheckoutBlocked } from "./express-checkout.js";
+import {
+  findWalletAddressMissingRegion,
+  showRegionPicker,
+} from "./regions.js";
 
 function toStripeBillingDetails(event) {
   if (event.billingDetails) {
@@ -263,6 +267,20 @@ async function runConfirmation(event) {
         amount: state.currentAmount,
         currency: state.currentCurrency,
       });
+      return false;
+    }
+
+    const missingRegion = await findWalletAddressMissingRegion(
+      toWalletAddress(event.shippingAddress),
+      toWalletAddress(event.billingDetails)
+    );
+    if (missingRegion) {
+      notifyPaymentFailure(
+        event,
+        STRIPE.PAYMENT_FAILED_REASON.INVALID_SHIPPING_ADDRESS
+      );
+      showRegionPicker(missingRegion);
+      log(LOG.regionRequired, { countryCode: missingRegion.countryCode });
       return false;
     }
 

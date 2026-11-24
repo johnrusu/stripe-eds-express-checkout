@@ -39,6 +39,7 @@ import {
   renderCartSummary,
 } from "./storefront/cart.js";
 import { copyTextToClipboard } from "./storefront/clipboard.js";
+import { handleRegionChange } from "./storefront/regions.js";
 
 async function handleConnect(event) {
   event.preventDefault();
@@ -169,6 +170,7 @@ dom.cartForm.addEventListener(DOM_EVENT.SUBMIT, handleAddProduct);
 dom.cartId.addEventListener(DOM_EVENT.INPUT, syncCartActionAvailability);
 dom.productSku.addEventListener(DOM_EVENT.INPUT, syncCartActionAvailability);
 dom.productSku.addEventListener(DOM_EVENT.CHANGE, persistPublicConfiguration);
+dom.regionSelect.addEventListener(DOM_EVENT.CHANGE, handleRegionChange);
 dom.clearSessionButton.addEventListener(DOM_EVENT.CLICK, clearLocalSession);
 dom.purgeLocalStorageButton?.addEventListener(
   DOM_EVENT.CLICK,
